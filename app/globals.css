@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --font-mona: var(--font-mona);
+  --animation: gradient 8s linear infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+h1 {
+  @apply text-4xl font-mona font-semibold;
+}
+
+h2 {
+  @apply text-2xl font-mona font-semibold border-none
+}
+
+h3 {
+  @apply text-xl font-mona font-semibold border-none
+}
+
+p {
+  @apply font-mona my-6;
+}
+
+
+@layer utilities {
+  .page-px {
+    @apply px-24;
+  }
+}
