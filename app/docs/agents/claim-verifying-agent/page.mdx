@@ -1,0 +1,244 @@
+# Claim Verifying Agent
+
+## Overview
+
+The Claim Verifying Agent is a core component of the video analysis pipeline that extracts factual assertions from YouTube video transcripts and verifies their accuracy using real-time web search. This agent ensures content credibility by systematically fact-checking claims made to viewers.
+
+---
+
+## Core Principle
+
+This agent analyzes video transcripts to extract all claims made on the topic of the video which are being presented to viewers (multiple claims throughout the video, relevant to the topic). The agent then fact-checks all these claims and generates a structured report about how many of these claims are true, false, or unverifiable.
+
+---
+
+## What's a "Relevant" Claim?
+
+A relevant claim is defined as:
+
+- **Factual assertion**: A statement that can be objectively verified or disproven (not opinions or subjective statements)
+- **Topic-aligned**: Directly related to the main subject matter of the video
+- **Viewer-directed**: Information presented as fact to the audience (not hypotheticals or rhetorical questions)
+- **Verifiable**: Can be checked against credible external sources
+
+### Examples of Relevant Claims:
+
+- ✅ "The Python programming language was created in 1991"
+- ✅ "Studies show that 8 hours of sleep improves cognitive performance"
+- ✅ "The Tesla Model 3 has a range of 358 miles"
+
+### Examples of Non-Relevant Claims:
+
+- ❌ "I think Python is the best programming language" (opinion)
+- ❌ "What if we could travel faster than light?" (hypothetical)
+- ❌ Off-topic tangents unrelated to video's main subject
+
+---
+
+## Workflow Steps
+
+The claim verifying agent executes the following systematic process:
+
+### 1. Claim Extraction
+
+- Parses the cleaned video transcript text
+- Identifies all factual assertions made throughout the content
+- Filters claims based on relevance criteria
+- Structures each claim with:
+  - Original quote from transcript
+  - Timestamp/context (if available)
+  - Claim type/category
+
+### 2. Claim Verification
+
+For each extracted claim, the agent:
+
+- Formulates targeted search queries using the Brave Search API
+- Retrieves current, authoritative sources from the web
+- Cross-references claim against multiple credible sources
+- Assigns verification status:
+  - **True**: Supported by credible sources
+  - **False**: Contradicted by credible sources
+  - **Couldn't Tell**: Insufficient or conflicting information
+
+### 3. Report Generation
+
+- Compiles verification results into a structured report
+- Calculates accuracy metrics (e.g., % true claims, % false claims)
+- Passes the complete report to the [Supervisor Agent](/docs/agents/supervisor-agent) for final synthesis
+
+---
+
+## Architecture
+
+### Technology Stack
+
+**LLM Integration**:
+
+- Gemini API for claim extraction and analysis
+- Function calling/tool use capability for search integration
+
+**Search Integration**:
+
+- Brave Search API for real-time fact verification
+- Endpoint: `https://api.search.brave.com/res/v1/web/search`
+
+**Data Pipeline**:
+
+- Input: YouTube transcript (extracted via yt-dlp or YouTube Transcript API)
+- Processing: Claim extraction → Verification → Report generation
+- Output: Structured JSON report with verification results
+
+### System Flow
+
+[YouTube Transcript]
+↓
+[Claim Extraction (Gemini API)]
+↓
+[Claim List with Context]
+↓
+[For each claim: Search Query Generation]
+↓
+[Brave Search API Call]
+↓
+[Result Analysis & Verification]
+↓
+[Verification Report (JSON)]
+↓
+[Supervisor Agent]
+
+---
+
+## Tools & APIs
+
+### Brave Search API Integration
+
+The agent uses Brave Search API as a tool for real-time fact verification.
+
+**Implementation**:
+
+**Search Strategy**:
+
+- Each claim generates 1-3 targeted search queries
+- Queries are formulated to find both supporting and contradicting evidence
+- Results are analyzed from multiple sources for consensus
+
+### Gemini API Tool Configuration
+
+The Brave Search function is configured as a tool for Gemini:
+
+---
+
+## Input & Output Data
+
+### Input Data Format
+
+**Type**: Plain text string (cleaned transcript)
+
+**Example**:
+Welcome to today's video about electric vehicles. The Tesla Model 3
+has a range of 358 miles on a single charge. Electric cars produce
+zero emissions, making them better for the environment...
+
+**Requirements**:
+
+- UTF-8 encoded text
+- Cleaned of special characters and formatting artifacts
+- Preferably segmented with timestamps (optional but helpful)
+
+### Output Data Format
+
+**Type**: JSON object
+
+**Schema**:
+
+**Example Output**:
+
+---
+
+## Configuration & Environment
+
+### Required Environment Variables
+
+Brave Search API
+BRAVE_API_KEY=your_brave_api_subscription_token
+
+Gemini API
+GEMINI_API_KEY=your_gemini_api_key
+
+Optional: Rate limiting
+MAX_CLAIMS_PER_VIDEO=50
+MAX_SEARCHES_PER_CLAIM=3
+REQUEST_TIMEOUT_MS=10000
+
+
+### Rate Limits & Optimization
+
+**Brave Search API**:
+- Free tier: 2,000 queries/month
+- Pro tier: Higher limits based on subscription
+- Implement caching for repeated queries
+- Batch similar claims when possible
+
+**Gemini API**:
+- Implement request batching for claim extraction
+- Use streaming responses for long transcripts
+- Set appropriate temperature (0.2-0.4 for factual tasks)
+
+---
+
+## Error Handling
+
+The agent implements robust error handling for:
+
+1. **Search API Failures**:
+   - Retry logic with exponential backoff
+   - Fallback to "couldn't_tell" status if searches fail
+   - Log failures for manual review
+
+2. **Invalid Claims**:
+   - Skip claims that don't meet relevance criteria
+   - Flag ambiguous statements for manual review
+
+3. **Source Reliability**:
+   - Prioritize authoritative domains
+   - Require multiple sources for controversial claims
+   - Flag low-confidence verifications
+
+---
+
+## Performance Considerations
+
+- **Parallel Processing**: Verify multiple claims concurrently (with rate limit awareness)
+- **Caching**: Store search results to avoid redundant API calls
+- **Transcript Chunking**: Process long transcripts in segments to avoid token limits
+- **Smart Search**: Generate precise queries to minimize API usage
+
+---
+
+## Integration with Supervisor Agent
+
+The Claim Verifying Agent outputs are consumed by the Supervisor Agent, which:
+- Aggregates claim verification results
+- Generates final credibility score for the video
+- Combines with other agent outputs (citations, topic analysis)
+- Produces user-facing report in browser extension
+
+---
+
+## Future Enhancements
+
+- **Citation Cross-Reference**: Verify if claims match citations provided in video description
+- **Temporal Verification**: Track claim accuracy over time as facts evolve
+- **Source Credibility Scoring**: Weight verification based on source authority
+- **Claim Categorization**: Group claims by topic/domain for better analysis
+- **Multi-Language Support**: Extend to non-English transcripts
+
+---
+
+## Related Documentation
+
+- [Supervisor Agent](/docs/agents/supervisor-agent)
+- [YouTube Transcript Extraction Pipeline](/docs/pipelines/transcript-extraction)
+- [Brave Search API Integration Guide](/docs/integrations/brave-search)
+- [Browser Extension Architecture](/docs/architecture/extension-overview)

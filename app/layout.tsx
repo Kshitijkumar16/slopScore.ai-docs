@@ -40,10 +40,10 @@ export default async function RootLayout({
         {/* Your additional tags should be passed as `children` of `<Head>` element */}
       </Head>
       <body
-        className={`${mona.variable} ${pixel.variable} mx-auto max-w-[1920px] bg-black selection:bg-arancia selection:text-black`}
+        className={`${mona.variable} ${pixel.variable} mx-auto max-w-[1920px] bg-black selection:bg-arancia selection:text-white`}
       >
         <Layout
-          banner={banner}
+          // banner={banner}
           darkMode={false}
           nextThemes={{ defaultTheme: "dark" }}
           navbar={<NavbarComponent />}
@@ -57,7 +57,7 @@ export default async function RootLayout({
           sidebar={{ toggleButton: false }}
           toc={{ title: "On this page", backToTop: true }}
         >
-          <div className="pt-12">{children}</div>
+          <div className="pt-20">{children}</div>
           <ThemeSwitch />
         </Layout>
       </body>

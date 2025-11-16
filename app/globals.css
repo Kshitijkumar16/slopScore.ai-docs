@@ -25,19 +25,19 @@
 }
 
 h1 {
-  @apply text-4xl font-mona font-semibold;
+  @apply text-4xl mt-12 pb-4 font-mona font-semibold;
 }
 
 h2 {
-  @apply text-2xl font-mona font-semibold border-none;
+  @apply text-2xl pt-4 mb-0 font-mona font-semibold border-none;
 }
 
 h3 {
-  @apply text-xl font-mona font-semibold border-none;
+  @apply text-lg font-mona pt-4 font-semibold border-none;
 }
 
 p {
-  @apply my-6;
+  @apply my-4;
 }
 
 @layer utilities {

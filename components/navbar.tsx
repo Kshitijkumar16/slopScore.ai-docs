@@ -3,7 +3,7 @@ import GradientText from "./GradientText";
 
 const NavbarComponent = () => {
   return (
-    <div className="border-b border-b-white/20 py-1 bg-black">
+    <div className="border-b fixed z-999 top-0 w-full border-b-white/20 py-1 bg-black">
       <Navbar
         logo={<p className="font-pixel text-white text-[24px]">Slopscore.ai</p>}
         // align="left"
