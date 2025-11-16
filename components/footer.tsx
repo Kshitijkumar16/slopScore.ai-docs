@@ -4,52 +4,39 @@ import { Github, Instagram, Twitter, X } from "lucide-react";
 
 const FooterComponent = () => {
   return (
-    <div className="bg-black border-t border-t-white/20 pt-8 page-px">
+    <div className="bg-black border-t selection:text-black selection:bg-arancia border-t-white/20 pt-8 page-px">
       <div className="flex justify-between w-full">
         <div>
-          <GradientText
-            colors={["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"]}
-            animationSpeed={10}
-            className="font-mona text-lg"
-          >
-            SlopScore.ai
-          </GradientText>
+          <p className="font-pixel text-white text-[24px]">SlopScore.ai</p>
         </div>
-        <div className="-translate-y-5.5">
+        <div className="translate-y-2.5">
           <p className="text-white text-sm">Resources</p>
           <p className="text-white/50 text-sm">Link 1</p>
           <p className="text-white/50 text-sm">Link 2</p>
           <p className="text-white/50 text-sm">Link 3</p>
           <p className="text-white/50 text-sm">Link 4</p>
-          <p className="text-white/50 text-sm">Link 5</p>
-          <p className="text-white/50 text-sm">Link 6</p>
-          <p className="text-white/50 text-sm">Link 7</p>
         </div>
-        <div className="-translate-y-5.5">
+        <div className="translate-y-2.5">
           <p className="text-white text-sm">More</p>
           <p className="text-white/50 text-sm">Link 1</p>
           <p className="text-white/50 text-sm">Link 2</p>
           <p className="text-white/50 text-sm">Link 3</p>
-          <p className="text-white/50 text-sm">Link 4</p>
         </div>
-        <div className="-translate-y-5.5">
+        <div className="translate-y-2.5">
           <p className="text-white text-sm">About us</p>
           <p className="text-white/50 text-sm">Link 1</p>
           <p className="text-white/50 text-sm">Link 2</p>
-          <p className="text-white/50 text-sm">Link 3</p>
         </div>
-        <div className="-translate-y-5.5">
+        <div className="translate-y-2.5">
           <p className="text-white text-sm">Legal</p>
           <p className="text-white/50 text-sm">Privacy Policy</p>
-       
         </div>
 
-        <div className="-translate-y-5.5 w-60">
+        <div className="translate-y-2.5 w-60">
           <p className="text-white text-sm">Stay in the loop</p>
           <p className="text-white/50 text-sm">
             Lorem ipsum dolor sit amet consectetur, adipisicing elit.
           </p>
-          
         </div>
       </div>
 

@@ -3,20 +3,20 @@ import GradientText from "./GradientText";
 
 const NavbarComponent = () => {
   return (
-    <div className="border-b border-b-white/20 py-1 bg-neutral-950">
+    <div className="border-b border-b-white/20 py-1 bg-black">
       <Navbar
-        logo={
-          <GradientText
-            colors={["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"]}
-            animationSpeed={10}
-            className="font-mona text-lg"
-          >
-            SlopScore.ai
-          </GradientText>
+        logo={<p className="font-pixel text-white text-[24px]">Slopscore.ai</p>}
+        // align="left"
+        className="page-px m-0 min-w-full bg-black gap-x-6 flex items-center opacity-100"
+        // projectLink="https://github.com/anishtilloo/mumbai-hacks-project-practice"
+        chatIcon={
+          <div className="bg-white rounded-md h-[30px] px-4 flex justify-center items-center">
+            <p className="text-black font-mona text-sm font-medium">
+              Try it out
+            </p>
+          </div>
         }
-        // align="left" 
-        className="page-px m-0 min-w-full bg-neutral-950"
-        projectLink="https://github.com/Kshitijkumar16/slopScore.ai-docs"
+        chatLink="chat"
       />
     </div>
   );

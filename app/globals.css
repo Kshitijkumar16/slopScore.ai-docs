@@ -4,7 +4,11 @@
 @theme {
   --color-black: #000000;
   --color-white: #ffffff;
+  --color-clay: #e8e2d7;
+  --color-arancia: #ff6f07;
+  --color-charcoal: #1d1d1d;
   --font-mona: var(--font-mona);
+  --font-pixel: var(--font-pixel);
   --animation: gradient 8s linear infinite;
 }
 
@@ -25,17 +29,16 @@ h1 {
 }
 
 h2 {
-  @apply text-2xl font-mona font-semibold border-none
+  @apply text-2xl font-mona font-semibold border-none;
 }
 
 h3 {
-  @apply text-xl font-mona font-semibold border-none
+  @apply text-xl font-mona font-semibold border-none;
 }
 
 p {
-  @apply font-mona my-6;
+  @apply my-6;
 }
-
 
 @layer utilities {
   .page-px {

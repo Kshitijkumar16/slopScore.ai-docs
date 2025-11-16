@@ -10,4 +10,13 @@ const withNextra = nextra({
 export default withNextra({
   // ... Add regular Next.js options here
   reactCompiler: true,
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/docs",
+        permanent: true,
+      },
+    ];
+  },
 });
