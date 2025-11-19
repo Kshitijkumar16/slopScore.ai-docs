@@ -7,9 +7,20 @@ export default {
     title: "Getting started",
     theme: {},
   },
-  // "##": { type: "separator" },
-  about: {
-    title: "About",
+  architecture: {
+    title: "Architecture",
+    theme: {},
+  },
+  agents: {
+    title: "Agents",
+    theme: {},
+  },
+  "tools-and-integrations": {
+    title: "Tools & Integrations",
+    theme: {},
+  },
+  "understanding-results": {
+    title: "Understanding Results",
     theme: {},
   },
 };

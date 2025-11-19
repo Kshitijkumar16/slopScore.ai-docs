@@ -1,237 +1,520 @@
 # Claim Verifying Agent
 
-## Overview
-
-The Claim Verifying Agent is a core component of the video analysis pipeline that extracts factual assertions from YouTube video transcripts and verifies their accuracy using real-time web search. This agent ensures content credibility by systematically fact-checking claims made to viewers.
+The Claim Verifying Agent extracts facts & claims mentioned in the YouTube video and verifies their accuracy using real-time web search. This agent ensures the `credibility of the content` by systematically fact-checking claims made to viewers.
 
 ---
 
 ## Core Principle
 
-This agent analyzes video transcripts to extract all claims made on the topic of the video which are being presented to viewers (multiple claims throughout the video, relevant to the topic). The agent then fact-checks all these claims and generates a structured report about how many of these claims are true, false, or unverifiable.
+This agent analyses video transcripts to extract all [Relevant claims](/docs/agents/claim-verifying-agent#relevant-claim) made on the topic of the video, which are being presented to viewers (multiple claims throughout the video, relevant to the topic).
+
+The agent then fact-checks all these claims and generates a structured report about how many of these claims are `true`, `false`, or `unverifiable`.
+
+### Why this agent?
+
+- The most important question before watching a video: `Is the information actually true?` This agent answers that question for you.
+
+- Professional production quality no longer signals accuracy. A 15-minute educational video might teach you _"facts"_ that are completely invented by AI, and you'd have no way to know without spending hours fact-checking every claim yourself.
+
+- So, instead of gambling on a video's accuracy or spend hours manually fact-checking, this agent automates the process professional fact-checkers use—but delivers results in 30 seconds instead of hours.
+
+- By providing this verification before you watch, this agent `prevents misinformation from taking root` in the first place.
+
+- In an information landscape where `"fake news"` can spread faster than fact-checkers can respond, this agent gives you the same verification power professionals use—instantly, transparently, and at scale
+
+### Purpose
+
+The purpose of this agent is to automate the labor-intensive process of `lateral reading` and `fact verification` that professional fact-checkers perform manually—transforming hours of research into a 30-second analysis.
+
+Specifically, this agent:
+
+1. `Prevents misinformation consumption`: By flagging false or unverifiable claims before the user invests time watching the video, it acts as a filter against AI hallucinations and fabricated content.​
+
+2. `Provides transparent evidence`: Rather than simply labeling content as "fake" or "real," the agent shows which specific claims were verified, contradicted, or lack corroboration—empowering users to make informed decisions based on evidence, not algorithms.
+
+3. `Enables crisis-time verification`: During breaking news events (calamities, political events, emergencies), the agent provides verification in 30 seconds—faster than fact-checkers can publish rebuttals—helping users distinguish verified emergency information from panic-generating content.
 
 ---
 
-## What's a "Relevant" Claim?
+## Concepts & techniques
 
-A relevant claim is defined as:
+This section explains the key concepts and methodologies that power this agent's verification process. One should know these to better understand this agent and its workings.
 
-- **Factual assertion**: A statement that can be objectively verified or disproven (not opinions or subjective statements)
-- **Topic-aligned**: Directly related to the main subject matter of the video
-- **Viewer-directed**: Information presented as fact to the audience (not hypotheticals or rhetorical questions)
-- **Verifiable**: Can be checked against credible external sources
+### Relevant Claim
 
-### Examples of Relevant Claims:
+A relevant claim in our project is defined as:
 
-- ✅ "The Python programming language was created in 1991"
-- ✅ "Studies show that 8 hours of sleep improves cognitive performance"
-- ✅ "The Tesla Model 3 has a range of 358 miles"
+1. **`Factual assertion`**: A statement that can be objectively verified or disproven (not opinions or subjective statements)
+2. **`Topic-aligned`**: Directly related to the main subject matter of the video
+3. **`Viewer-directed`**: Information presented as fact to the audience (not hypotheticals or rhetorical questions)
+4. **`Verifiable`**: Can be checked against credible external sources
 
-### Examples of Non-Relevant Claims:
+- #### Examples of `Relevant Claims`:
 
-- ❌ "I think Python is the best programming language" (opinion)
-- ❌ "What if we could travel faster than light?" (hypothetical)
-- ❌ Off-topic tangents unrelated to video's main subject
+  - ✅ "The Python programming language was created in 1991"
+  - ✅ "Studies show that 8 hours of sleep improves cognitive performance"
+  - ✅ "The Tesla Model 3 has a range of 358 miles"
 
----
+- #### Examples of `Non-Relevant Claims`:
 
-## Workflow Steps
+  - ❌ "I think Python is the best programming language" (opinion)
+  - ❌ "What if we could travel faster than light?" (hypothetical)
+  - ❌ Off-topic tangents unrelated to video's main subject
 
-The claim verifying agent executes the following systematic process:
+### Dynamic Prompting
 
-### 1. Claim Extraction
+Dynamic prompting is a technique where prompts are constructed programmatically based on runtime context rather than using fixed, static templates.
 
-- Parses the cleaned video transcript text
-- Identifies all factual assertions made throughout the content
-- Filters claims based on relevance criteria
-- Structures each claim with:
-  - Original quote from transcript
-  - Timestamp/context (if available)
-  - Claim type/category
+- #### Why we are using dynamic prompting:
 
-### 2. Claim Verification
+  In the claim verification process, every video has different characteristics. Some are technical tutorials, others are news commentary, some contain scientific claims while others discuss historical events.
 
-For each extracted claim, the agent:
+  A single static prompt cannot effectively extract claims across all these domains. Dynamic prompting will help us to provide better and custom context about each video to the LLM and get more aligned results.
 
-- Formulates targeted search queries using the Brave Search API
-- Retrieves current, authoritative sources from the web
-- Cross-references claim against multiple credible sources
-- Assigns verification status:
-  - **True**: Supported by credible sources
-  - **False**: Contradicted by credible sources
-  - **Couldn't Tell**: Insufficient or conflicting information
+- #### How it works here:
 
-### 3. Report Generation
+  1.  `Context Analysis:` First, we analyze the video's metadata (title, description, channel info) to determine its domain, tone, and audience
 
-- Compiles verification results into a structured report
-- Calculates accuracy metrics (e.g., % true claims, % false claims)
-- Passes the complete report to the [Supervisor Agent](/docs/agents/supervisor-agent) for final synthesis
+  2.  `Template Selection:` Based on the context, we select appropriate prompt templates optimized for that content type
+
+  3.  `Variable Injection:` We inject video-specific variables (topic, creator background, target audience) into the template
+
+  4.  `Instruction Adaptation:` The extraction instructions we provide to the LLM, will adapt based on content complexity—scientific videos get stricter factual criteria, while opinion pieces get more nuanced claim filtering
+
+This provides us benefits like higher accuracy, better context awareness and reduced hallucinations from the LLM.
 
 ---
 
-## Architecture
+## Agent Workflow
 
-### Technology Stack
+The claim verifying agent works with LLM as well as additional tools to first extract the [Relevant Claims](/docs/agents/claim-verifying-agent#relevant-claim) from the provided transcript, verfify these claims, generate a report and pass that on to the supervisor agent.
 
-**LLM Integration**:
+### Overview of steps
 
-- Gemini API for claim extraction and analysis
-- Function calling/tool use capability for search integration
+1. `Claim extraction:` Using the cleaned video transcript, we first generate the video context, then identify all [Relevant Claims](/docs/agents/claim-verifying-agent#relevant-claims) made throughout the content. We generate a list of all the relevant claims in the **claim-extraction-output** format. (refer to [Claim Extraction Logic](/docs/agents/claim-verifying-agent#claim-extraction-logic)) and then pass it on to the next step.
 
-**Search Integration**:
+2. `Claim Verification:` For each extracted claim, the agent executes one of two strategies in parallel:
 
-- Brave Search API for real-time fact verification
-- Endpoint: `https://api.search.brave.com/res/v1/web/search`
+- Strategy A (Direct Web Search): If verificationStrategy is `WEB_SEARCH` or `SKIP`, go directly to Brave Search
 
-**Data Pipeline**:
+- Strategy B (Fact Check with Fallback): If verificationStrategy is `FACT_CHECK_API` or `BOTH`:
 
-- Input: YouTube transcript (extracted via yt-dlp or YouTube Transcript API)
-- Processing: Claim extraction → Verification → Report generation
-- Output: Structured JSON report with verification results
+  1. Query Google Fact Check API first
+  2. If result found AND confidence ≥ 85%, mark claim as processed
+  3. Otherwise, fallback to Brave Search
 
-### System Flow
+- All claims are processed in parallel using Promise.all()
 
-[YouTube Transcript]
-↓
-[Claim Extraction (Gemini API)]
-↓
-[Claim List with Context]
-↓
-[For each claim: Search Query Generation]
-↓
-[Brave Search API Call]
-↓
-[Result Analysis & Verification]
-↓
-[Verification Report (JSON)]
-↓
-[Supervisor Agent]
+3. `Report Generation`: Once all claims are processed, generate a [structured JSON report](/docs/agents/claim-verifying-agent#) with all verification results and pass to the [Supervisor Agent](/docs/agents/supervisor-agent) for final synthesis.
+
+### Claim extraction logic:
+
+**Step 1** : Gather video details & generate context for the video
+
+Once the agent gets triggered, it uses the input JSON to determine the following things using an LLM -
+
+- The `topic` of the video,
+- The `tone` of the message,
+- The `claims` made in the video which are being told to the viewer,
+- Any context on the video `creator`
+- Any content on the `target audience`.
+
+`Step input:` The input for this step is a `JSON` object with the following schema
+
+```ts filename="/input-to-agent.ts" copy
+const input_to_agent = {
+  videoId: "dQw4w9WgXcQ",
+  title: "Complete Guide to UPI System Design",
+  description: "In this video, we explain the technical architecture...",
+  channelName: "System Design Interview",
+  transcript: "Welcome to this video about UPI system design...",
+  duration: 1523, // in seconds
+  uploadDate: "2024-11-15",
+};
+```
+
+`Step output:` The output for this step is a `JSON` object with the following schema
+
+```ts filename="/video-context.ts" copy
+const video_context = {
+  topic: "UPI Payment System Architecture",
+  tone: ["Informative", "Technical", "Educational"],
+  domain: "Software Engineering / System Design",
+  creatorContext: "System design interview preparation channel",
+  targetAudience: "Software engineers, backend developers, system designers",
+  contentType: "Technical tutorial",
+};
+```
+
+**Step 2** : Generate the claims list
+
+Using [dynamic prompting](/docs/agents/claim-verifying-agent#dynamic-prompting), we construct context-aware prompts and task the LLM to generate the list of claims.
+
+We will pass the video `context`, video `transcript` to LLM with `extraction instructions` about how to list [Relevant Claims](/docs/agents/claim-verifying-agent#relevant-claim).
+
+`Step input:` The input for this step is a `JSON` object with the following schema
+
+```ts filename="/input-json.ts" copy
+const claim_extraction_input = {
+  videoContext: {
+    topic: "UPI Payment System Architecture",
+    tone: ["Informative", "Technical"],
+    domain: "Software Engineering",
+  },
+  transcript:
+    "UPI processes over 10 billion transactions per month. Full transcript ---",
+  instructions:
+    "Extract factual claims that can be objectively verified. Detailed prompt ---",
+};
+```
+
+`Step output:` The output for this step is a `JSON` object with the following schema
+
+```ts filename="/generated-list-output-json.ts" copy
+interface ClaimObject {
+  id: number;
+  statement: string;
+  category:
+    | "CONTROVERSIAL"
+    | "SCIENTIFIC"
+    | "STATISTICAL"
+    | "HISTORICAL"
+    | "TECHNICAL"
+    | "COMMON_KNOWLEDGE";
+  verificationStrategy: "FACT_CHECK_API" | "WEB_SEARCH" | "BOTH" | "SKIP";
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  entities: string[];
+  confidence: number;
+  factCheckQuery: string | null; // For Google Fact Check API
+  braveSearchQueries: SearchQuery[] | null; // For Brave Search
+}
+
+interface SearchQuery {
+  query: string;
+  type:
+    | "EXACT_PHRASE"
+    | "KEYWORD_BASED"
+    | "NUMERICAL"
+    | "ENTITY_FOCUSED"
+    | "TEMPORAL";
+  platforms?: string[] | null;
+}
+
+const claim_extraction_output = {
+  topic: {
+    step: "topic",
+    content: "UPI System Design",
+  },
+  tone: {
+    step: "tone",
+    content: ["Informative", "Technical", "Educational"],
+  },
+  claims: {
+    step: "claims",
+    content: [
+      {
+        id: 1,
+        statement: "UPI processes over 10 billion transactions per month",
+        category: "STATISTICAL",
+        verificationStrategy: "WEB_SEARCH",
+        priority: "HIGH",
+        entities: ["UPI", "10 billion", "transactions", "month"],
+        confidence: 0.95,
+        factCheckQuery: null,
+        braveSearchQueries: [
+          {
+            query: "UPI transaction volume monthly statistics 2024 2025",
+            type: "NUMERICAL",
+            platforms: ["npci.org.in", "rbi.org.in"],
+          },
+          {
+            query: "NPCI UPI 10 billion transactions per month official data",
+            type: "EXACT_PHRASE",
+            platforms: ["npci.org.in", "economictimes.com"],
+          },
+        ],
+      },
+      {
+        id: 2,
+        statement: "Vaccines cause autism in children",
+        category: "CONTROVERSIAL",
+        verificationStrategy: "BOTH",
+        priority: "HIGH",
+        entities: ["vaccines", "autism", "children"],
+        confidence: 0.98,
+        factCheckQuery: "vaccines cause autism children",
+        braveSearchQueries: [
+          {
+            query: "vaccines autism children scientific studies",
+            type: "ENTITY_FOCUSED",
+            platforms: ["nih.gov", "cdc.gov", "who.int"],
+          },
+        ],
+      },
+    ],
+  },
+  creator_context: {
+    step: "creator_context",
+    content: "System design interview preparation channel",
+  },
+  target_audience: {
+    step: "target_audience",
+    content: "Software engineers, backend developers, system designers",
+  },
+};
+```
+
+At the end of this step, we now have a JSON object containing the actual `list of relevant claims` we want to process, along with data about how to process each claim.
+
+### Claim verification logic:
+
+For each extracted claim, the agent executes a two-state verification strategy based on the `verificationStrategy` field.
+
+#### Verification Strategy Overview
+
+| Strategy       | Execution Flow                                                               |
+| -------------- | ---------------------------------------------------------------------------- |
+| WEB_SEARCH     | → Brave Search (direct)                                                      |
+| FACT_CHECK_API | → Google Fact Check → If found & confidence ≥85% → Done, Else → Brave Search |
+
+<br />
+
+**Step 1:** Route Claims by Strategy
+
+Sort and group all claims into two execution paths:
+
+```ts filename="sort-claims.ts" copy
+const directWebSearchClaims = claims.filter(
+  (c) => c.verificationStrategy === "WEB_SEARCH"
+);
+
+const factCheckFirstClaims = claims.filter(
+  (c) => c.verificationStrategy === "FACT_CHECK_API"
+);
+```
+
+**Step 2:** Execute Verification in Parallel
+
+Process all claims concurrently using Promise.all() to maximize speed:
+
+```ts filename="/execute-claims.ts" copy
+const allVerificationPromises = [
+  // Path A: Direct Brave Search
+  ...directWebSearchClaims.map((claim) => verifyWithBraveSearchOnly(claim)),
+
+  // Path B: Fact Check with fallback
+  ...factCheckFirstClaims.map((claim) => verifyWithFactCheckAndFallback(claim)),
+];
+
+const allResults = await Promise.all(allVerificationPromises);
+```
+
+**Step 3:** Path A - Direct Brave Search
+For claims with `WEB_SEARCH` strategy:
+
+Task 3.1: Execute Brave Search queries
+
+- Extract `braveSearchQueries` array from claim
+- Execute all queries in parallel using `Promise.all()`
+- Apply domain filters if specified in query object (for `Health/medical claims`, `Government statistics`, `Scientific facts`)
+
+```ts filename="" copy
+async function verifyWithBraveSearchOnly(claim: ClaimObject) {
+  // Execute all Brave Search queries in parallel
+  const searchResults = await Promise.all(
+    claim.braveSearchQueries.map((sq) => executeBraveSearch(sq))
+  );
+
+  // Continue to Task 3.3
+}
+```
+
+Task 3.3: Parse and filter search results
+
+- Extract snippets, URLs, and publish dates from Brave Search response
+- Filter to authoritative domains (prioritize `.gov`, `.edu`, major news outlets)
+
+Task 3.4: Perform consensus analysis
+
+- Count sources supporting vs contradicting the claim
+- Weight by authority score (NASA > Wikipedia > blogs)
+- Check numerical alignment if claim contains numbers (must match within ±10%)
+- Calculate overall confidence score
+
+Task 3.5: Assign verdict
+
+- `TRUE`: ≥80% weighted sources support, no high-authority contradictions
+- `FALSE`: ≥80% weighted sources contradict, or high-authority source explicitly disproves
+- `COULDN'T_TELL`: Conflicting sources, insufficient data, or authority score below 0.6
+
+```ts filename="" copy
+// Continued from Task 3.2
+const aggregatedSources = deduplicateAndMerge(searchResults);
+const consensus = analyzeConsensus(aggregatedSources, claim);
+
+return {
+claimId: claim.id,
+verdict: consensus.verdict, // TRUE | FALSE | COULDN'T_TELL
+confidence: consensus.confidence,
+reasoning: consensus.reasoning,
+sources: consensus.sources
+};
+}
+```
+
+**Step 4:** Path B - Fact Check with Fallback
+For claims with `FACT_CHECK_API` strategy:
+
+Task 4.1: Query Google Fact Check API
+
+Use `factCheckQuery` string from claim object
+
+Call `https://factchecktools.googleapis.com/v1alpha1/claims:search`
+
+Set timeout to 5 seconds (fast fail if API slow)
+
+```ts filename="" copy
+async function verifyWithFactCheckAndFallback(claim: ClaimObject) {
+  // Task 4.1: Try Google Fact Check first
+  const factCheckResult = await queryGoogleFactCheck(claim.factCheckQuery);
+
+  // Continue to Task 4.2
+}
+```
+
+Task 4.2: Parse ClaimReview results
+
+- Extract all `claimReview` objects from response
+- Parse `textualRating` (True, False, Mostly True, etc.)
+- Extract `publisher`, `url`, `reviewDate` for each review
+- Aggregate multiple reviews if claim has been fact-checked by multiple sources
+
+Task 4.3: Calculate Fact Check confidence
+
+- Count reviews by verdict category (true vs false vs mixed)
+- Weight by publisher authority (Reuters > smaller outlets)
+- Calculate consensus confidence: `agreementCount` / `totalReviews`
+
+```ts filename="" copy
+// Continued from Task 4.1
+if (!factCheckResult || factCheckResult.claims.length === 0) {
+  // No ClaimReview found, skip to Task 4.5 (fallback)
+} else {
+  // Task 4.2 & 4.3: Parse and calculate confidence
+  const parsedReviews = parseClaimReviews(
+    factCheckResult.claims[0].claimReview
+  );
+  const consensus = calculateFactCheckConsensus(parsedReviews);
+
+  // Continue to Task 4.4
+}
+```
+
+Task 4.4: Check confidence threshold
+
+- If `consensus.confidence >= 0.85` (85% threshold):
+
+  - Mark claim as PROCESSED
+  - Return verdict with ClaimReview sources
+  - Skip Brave Search fallback
+
+- If `consensus.confidence < 0.85`:
+
+  - Proceed to Task 4.5 (Brave Search fallback)
+
+```ts filename="" copy
+// Continued from Task 4.3
+if (consensus.confidence >= 0.85) {
+  // High confidence match found - claim is PROCESSED
+  return {
+    claimId: claim.id,
+    verdict: consensus.verdict,
+    confidence: consensus.confidence,
+    verificationMethod: "FACT_CHECK_API",
+    reasoning: consensus.reasoning,
+    sources: parsedReviews.map((r) => ({
+      publisher: r.publisher.name,
+      url: r.url,
+      verdict: r.textualRating,
+      reviewDate: r.reviewDate,
+    })),
+  };
+  // If confidence < 85%, fall through to Task 4.5
+}
+```
+
+Task 4.5: Fallback to Brave Search
+
+- If no ClaimReview found OR confidence below 85%
+- Execute same Brave Search logic as Path A (Tasks 3.2 - 3.5)
+- Return verdict with `verificationMethod: "WEB_SEARCH_FALLBACK"`
+
+```ts filename="" copy
+// Task 4.5: Brave Search fallback
+const searchResults = await Promise.all(
+  claim.braveSearchQueries.map((sq) => executeBraveSearch(sq))
+);
+
+const aggregatedSources = deduplicateAndMerge(searchResults);
+const consensus = analyzeConsensus(aggregatedSources, claim);
+
+return {
+  claimId: claim.id,
+  verdict: consensus.verdict,
+  confidence: consensus.confidence,
+  verificationMethod: "WEB_SEARCH_FALLBACK",
+  reasoning: consensus.reasoning,
+  sources: consensus.sources,
+};
+```
+
+**Step 5:** Wait for All Claims to Complete
+
+Use `Promise.all()` to ensure all claims (both Path A and Path B) finish processing before proceeding to report generation:
+
+```ts filename="" copy
+// All claims processed in parallel
+const allVerificationResults = await Promise.all(allVerificationPromises);
+
+// All claims are now marked as PROCESSED
+// Proceed to Report Generation
+```
+
+#### Error Handling in Verification
+
+- **Timeout Protection:**
+
+  - Set per-claim timeout of 10 seconds
+  - If timeout reached, mark as `COULDN'T_TELL` and continue
+
+- **API Failure Handling:**
+
+  - Google Fact Check API fails → Immediately fallback to Brave Search
+  - Brave Search API fails → Retry once with exponential backoff (1s delay)
+  - If both retries fail → Mark as COULDN'T_TELL with error reason
+
+- **Partial Results:**
+  - If some Brave Search queries succeed but others fail, use partial results
+  - Log failed queries for debugging
+  - Lower confidence score proportionally (e.g., 2 of 3 queries failed = max confidence 0.6)
+
+### Report generation logic:
+
+Once all claims have been processed (marked as `PROCESSED`), generate a comprehensive JSON report for the Supervisor Agent.
+
+**Step 1:** Aggregate Verification Results
+Collect all individual claim verdicts and compute summary statistics:
 
 ---
 
-## Tools & APIs
-
-### Brave Search API Integration
-
-The agent uses Brave Search API as a tool for real-time fact verification.
-
-**Implementation**:
-
-**Search Strategy**:
-
-- Each claim generates 1-3 targeted search queries
-- Queries are formulated to find both supporting and contradicting evidence
-- Results are analyzed from multiple sources for consensus
-
-### Gemini API Tool Configuration
-
-The Brave Search function is configured as a tool for Gemini:
-
----
-
-## Input & Output Data
-
-### Input Data Format
-
-**Type**: Plain text string (cleaned transcript)
-
-**Example**:
-Welcome to today's video about electric vehicles. The Tesla Model 3
-has a range of 358 miles on a single charge. Electric cars produce
-zero emissions, making them better for the environment...
-
-**Requirements**:
-
-- UTF-8 encoded text
-- Cleaned of special characters and formatting artifacts
-- Preferably segmented with timestamps (optional but helpful)
-
-### Output Data Format
-
-**Type**: JSON object
-
-**Schema**:
-
-**Example Output**:
-
----
-
-## Configuration & Environment
-
-### Required Environment Variables
-
-Brave Search API
-BRAVE_API_KEY=your_brave_api_subscription_token
-
-Gemini API
-GEMINI_API_KEY=your_gemini_api_key
-
-Optional: Rate limiting
-MAX_CLAIMS_PER_VIDEO=50
-MAX_SEARCHES_PER_CLAIM=3
-REQUEST_TIMEOUT_MS=10000
-
-
-### Rate Limits & Optimization
-
-**Brave Search API**:
-- Free tier: 2,000 queries/month
-- Pro tier: Higher limits based on subscription
-- Implement caching for repeated queries
-- Batch similar claims when possible
-
-**Gemini API**:
-- Implement request batching for claim extraction
-- Use streaming responses for long transcripts
-- Set appropriate temperature (0.2-0.4 for factual tasks)
-
----
-
-## Error Handling
-
-The agent implements robust error handling for:
-
-1. **Search API Failures**:
-   - Retry logic with exponential backoff
-   - Fallback to "couldn't_tell" status if searches fail
-   - Log failures for manual review
-
-2. **Invalid Claims**:
-   - Skip claims that don't meet relevance criteria
-   - Flag ambiguous statements for manual review
-
-3. **Source Reliability**:
-   - Prioritize authoritative domains
-   - Require multiple sources for controversial claims
-   - Flag low-confidence verifications
-
----
-
-## Performance Considerations
-
-- **Parallel Processing**: Verify multiple claims concurrently (with rate limit awareness)
-- **Caching**: Store search results to avoid redundant API calls
-- **Transcript Chunking**: Process long transcripts in segments to avoid token limits
-- **Smart Search**: Generate precise queries to minimize API usage
-
----
-
-## Integration with Supervisor Agent
-
-The Claim Verifying Agent outputs are consumed by the Supervisor Agent, which:
-- Aggregates claim verification results
-- Generates final credibility score for the video
-- Combines with other agent outputs (citations, topic analysis)
-- Produces user-facing report in browser extension
+## Agent's Final Output
 
 ---
 
 ## Future Enhancements
 
-- **Citation Cross-Reference**: Verify if claims match citations provided in video description
 - **Temporal Verification**: Track claim accuracy over time as facts evolve
 - **Source Credibility Scoring**: Weight verification based on source authority
-- **Claim Categorization**: Group claims by topic/domain for better analysis
 - **Multi-Language Support**: Extend to non-English transcripts
 
 ---
