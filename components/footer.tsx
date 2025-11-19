@@ -4,7 +4,7 @@ import { Github, Instagram, Twitter, X } from "lucide-react";
 
 const FooterComponent = () => {
   return (
-    <div className="bg-black border-t selection:text-black selection:bg-arancia border-t-white/20 pt-8 page-px">
+    <div className="bg-black border-t selection:text-black selection:bg-arancia border-t-white/20 pt-8 page-px overflow-hidden">
       <div className="flex justify-between w-full">
         <div>
           <p className="font-pixel text-white text-[24px]">SlopScore.ai</p>

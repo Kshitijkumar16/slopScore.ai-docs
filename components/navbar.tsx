@@ -11,7 +11,7 @@ const NavbarComponent = () => {
         // projectLink="https://github.com/anishtilloo/mumbai-hacks-project-practice"
         chatIcon={
           <div className="bg-white rounded-md h-[30px] px-4 flex justify-center items-center">
-            <p className="text-black font-mona text-sm font-medium">
+            <p className="whitespace-nowrap text-black font-mona text-sm font-medium">
               Try it out
             </p>
           </div>

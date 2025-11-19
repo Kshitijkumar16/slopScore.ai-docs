@@ -46,6 +46,6 @@ p {
 
 @layer utilities {
   .page-px {
-    @apply px-24;
+    @apply md:px-24 px-4;
   }
 }

@@ -1,1 +1,38 @@
-# System Overwiew
+# System Overview
+
+SlopScore.ai uses a multi-agent architecture where specialized 
+AI agents work in parallel to verify different aspects of 
+video content.
+
+---
+
+## High-Level Flow
+
+User pastes YouTube URL
+↓
+[YouTube Data API] extracts transcript + metadata
+↓
+[Supervisor Agent] orchestrates 4 specialized agents:
+├─ Claim Verifying Agent
+├─ Author Reputation Agent
+├─ Visual Analysis Agent
+└─ (All run in parallel)
+↓
+[Supervisor Agent] synthesizes findings
+↓
+User sees Trust Report
+
+
+[View Detailed Workflow →]
+
+---
+
+## Key Components
+
+**Frontend**: WXT browser extension + Next.js
+**Backend**: Node.js on Vercel Edge
+**Orchestration**: LangChain + LangGraph
+**Database**: Convex (real-time caching)
+**APIs**: Google Fact Check, Brave Search, Hugging Face
+
+[View Tech Stack Details →]
