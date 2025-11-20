@@ -1,27 +1,34 @@
 # What is AI Slop?
 
-AI slop refers to low-quality, AI-generated content that:
+To build the solution, we must understand the problem. "AI Slop" is a new category of internet pollution that is distinct from traditional spam.
 
-- Contains fabricated facts
-- Cites other AI-generated sources as "evidence"
-- Uses polished production to appear credible
-- Spreads faster than fact-checkers can respond
+## Definition
 
----
+> **AI Slop:** Low-effort, mass-produced content that prioritizes engagement and quantity over factual accuracy or human verification. It often mimics the aesthetic of high-quality content to gain unwarranted credibility.
 
-## The Problem
+## The Mechanism of Slop
 
-- 9 of top 100 fastest-growing YouTube channels publish AI slop
-- AI-generated articles cite other AI articles (echo chamber)
-- Users can't distinguish quality content from misinformation
+Slop is not random; it is an industrial process.
 
----
+### 1. The Content Farms
 
-## Our Solution
+There are currently over 1,200 verified "pink slime" news sites and content farms operating globally. These entities use LLMs to scrape trending topics and generate thousands of articles/videos per day without human oversight.
 
-SlopScore.ai breaks this cycle by:
+`Pink slime` news sites are a network of deceptive online publications that mimic legitimate local news outlets but are not genuinely local or independent.
 
-- Verifying claims against authoritative sources
-- Tracing citation chains 2-3 levels deep
-- Flagging AI-generated sources
+### 2. The Hallucination Problem
 
+Because these models are optimized for _`plausibility`_ rather than _`truth`_, they frequently hallucinate:
+- Inventing statistics.
+- Creating fake quotes from real people.
+- Citing non-existent studies.
+
+### 3. The Citation Loop (The Most Dangerous Part)
+
+To appear credible, Slop content cites sources. However, because they produce content at scale, they often cite:
+
+- Other articles within their own network.
+- Other AI-generated content farms.
+- Dead links or irrelevant pages.
+
+This creates a `closed loop of misinformation` where false claims are backed up by other false claims, making it nearly impossible for a casual viewer to fact-check manually.

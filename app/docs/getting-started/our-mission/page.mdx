@@ -1,45 +1,56 @@
 # Our Mission
 
-Clearly defining our mission is important for us to build the right product. Its important when judges ask us questions.
+Clearly defining our mission is important for us to build the right product. Clearly knowing our mission will help us answer any questions about our app a lot better and more confidently.
 
-## The Core Philosophy: Accuracy > Authorship
+## AI Slop
 
-We believe the fundamental question for the post-AI internet is not _"Did a robot write this?"_ but rather **_"Is this information accurate?"_**
+We define AI Slop as `low-effort`, `unregulated content` that prioritizes quantity and engagement over factual accuracy.
 
-### The Problem with "AI Detection"
+**Slop** often looks professional. It can have high-quality voiceovers, 4K visuals, and confident narration.
 
-Current tools (like GPTZero or Originality.ai) focus on detecting **authorship**. They look for linguistic patterns, burstiness, and perplexity. We are explicitly rejecting this approach because:
+But, just because a video looks good does not mean it is accurate. If a creator uses AI to generate a script without verifying the facts, it is Slop, regardless of the production value.
 
-1.  **It is unreliable:** AI detection has high false-positive rates, often flagging non-native speakers or neurodivergent writers.
-2.  **It is irrelevant:** A human can write a script full of lies. An AI can write a script full of verified facts.
-3.  **It creates a false dichotomy:** It implies "Human = Good" and "AI = Bad," which is not true.
+## The Problem: `The AI-Citing-AI Loop`
 
-### Our Stance
+As AI tools become cheaper, "content farms" are generating thousands of articles and videos daily. To make this content look legitimate, these AI tools cite "sources."
 
-**Truth matters more than the creator.** Our mission is to verify the _content_, not the _creator_. We judge a video based on the integrity of its claims and the credibility of its sources.
-
-## The "Echo Chamber" Crisis
-
-We are solving a specific, urgent systemic risk: **The AI-Citing-AI Loop.**
-
-As AI tools become cheaper, content farms are generating thousands of articles and videos daily. To make this content look legitimate, these AI tools cite "sources." However, often:
+**The Danger:**
 
 1.  An AI writes a fake article.
 2.  Another AI (or a lazy creator) cites that article as a source for a YouTube video.
 3.  A viewer sees the citation and assumes the video is researched.
-4.  **Result:** Misinformation is "laundered" into truth through a chain of circular citations.
+4.  **Result:** `Misinformation is "laundered"` into truth through a chain of circular citations.
 
-**Our mission is to break this loop.**
+## Our Philosophy
 
-## Hackathon Success Criteria (The Winning Condition)
+We are **not** building an AI Detector. We are **not** against the use of AI tools.
 
-To win MumbaiHacks, we are prioritizing **Depth** and **Evidence** over speed or visual flashiness.
+If a creator uses AI to write a script, but the facts are true and the sources are legitimate, that is **good content**.
+If a human writes a script, but the facts are false and the sources are fake, that is **bad content**.
 
-**Our MVP succeeds if we can demonstrate:**
+**Our Approach:**
 
-1.  **Chain Detection:** We must trace a link from a YouTube video to its source, and check if _that_ source is part of a low-quality content farm loop.
-2.  **Factual Verification:** We must successfully extract claims and verify them against authoritative databases (Google Fact Check Tools, Reuters, etc.).
-3.  **Zero Visual Analysis:** We will **not** analyze video frames or thumbnails. This is out of scope. We focus 100% on the script, the claims, and the citation links.
+- **Don't ask:** "Did an AI write this?" (This is unreliable and often irrelevant).
+- **Ask:** "Is the information accurate? Do the citations actually exist? Are the sources credible?"
 
-**The Pitch Narrative:**
-"We don't tell you what to watch. We give you the context to decide. This is infrastructure for the post-AI internet."
+We focus entirely on the **information presented**, not the method of creation.
+
+`Accuracy > Authorship`
+
+## The Vision
+
+We are building `middleware for trust`. In a future where most content will be AI-generated, users need a tool that filters for accuracy, **ensuring that the efficiency of AI doesn't come at the cost of truth**.
+
+## Success Criteria
+
+To win this hackathon, we are prioritizing `Accuracy` and `Depth` over speed or visual flashiness.
+
+The MVP must demonstrate:
+
+1.  `Chain Detection`: We must be able to trace a link from a YouTube video to its source, and check if _that_ source is part of a low-quality content farm loop.
+2.  `Factual Verification`: We must successfully extract claims and verify them against authoritative databases (like Google Fact Check Tools) along with checking correctness of the information using Brave Search.
+3.  `Zero Visual Analysis`: We will **not** analyze video frames or thumbnails. This is out of scope. We focus 100% on the script, the claims, and the citation links.
+
+## Winning Condition:
+
+> **The project succeeds if we can show the judges a "high-production" YouTube video and prove, through data, that its sources are circular and its claims are false.**

@@ -1,55 +1,42 @@
-# SlopScore.ai
+# What is SlopScore.ai?
 
-### I'm emphasizing the three layers: content hallucinations, citation issues, and deceptive presentation, all feeding into an echo chamber effect.
+**SlopScore.ai** is an `Agentic Verification Engine` designed to verify YouTube content in real-time. It is a browser extension and web platform that automates the research process professional fact-checkers use to validate information.
 
-My solution's North Star is taking shape as an automated fact-checker that leverages "Lateral Reading" for evidence-based verification, not just a simple score.
+## What It Does
 
-Automated Verification
+Instead of guessing if a video was made by AI, SlopScore.ai analyzes the `informational integrity of the content`. It answers three questions:
 
-1. The Problem Statement
+1.  Are the claims factually true?
+2.  Do the cited sources actually exist and support the claims?
+3.  Is the video part of a circular misinformation loop?
 
-"The AI-Citing-AI Echo Chamber"
-YouTube is being flooded with "AI Slop"—content that looks professional (slick thumbnails, confident voiceovers) but contains hallucinated facts and cites other AI-generated articles as evidence.
+## Core Methodology
 
-The User Pain: Users cannot distinguish between a well-researched video and an AI hallucination without spending hours manually fact-checking.
+**Independent Cross-Verification**: Professional fact-checkers do not rely on the content itself to verify truth. Instead, they leave the source to investigate what other, trusted sources say about the topic. SlopScore.ai automates this research workflow using autonomous AI agents.
 
-The Systemic Risk: We are entering a loop where AI cites AI, creating a "manufactured consensus" that effectively launders misinformation into "truth."
+### The Workflow
 
-The Gap: Current tools only try to detect if AI wrote the text (which is prone to false positives). No tool currently automates the process of verifying if the claims are actually true.
+When a user analyzes a video, our system performs the following steps in parallel:
 
-Agentic Verification Engine.
+1.  `Transcript Extraction`: We fetch the full text of the video.
+2.  `Claim Extraction`: An AI agent identifies verifiable factual assertions (ignoring opinions).
+3.  Cross-Examination:
+    - `The Claim Verifier`: Queries the Google Fact Check Tools API and Brave Search to find consensus on the claims from high-authority domains (Reuters, NASA, .edu sites). If not found, we just use Brave Search to find authoritative sources, and cross-check if the content from the video matches these sources.
+    - `The Citation Tracer`: Extracts links from the description and traces them 2-3 levels deep. It checks if Source A cites Source B, source B sites source C and if Source C cites Source A (a circular loop).
+4.  `Synthesis`: The system compiles a "Trust Report" and calculates a SlopScore (0-100) based on evidence, not vibes.
 
-Innovation: Uniqueness of the solution approach
+## Why Not Just Use an AI Detector?
 
-Technical prowess: Quality and sophistication of implementation
+Existing tools (GPTZero, Copyleaks) focus on syntax (how sentences are constructed).
+SlopScore.ai focuses on semantics (what the sentences actually mean).
 
-Market potential: Commercial viability and scalability
+| Feature       | Standard AI Detectors                | SlopScore.ai                                        |
+| :------------ | :----------------------------------- | :-------------------------------------------------- |
+| Focus         | AI Writing Style                     | Factual Accuracy & Evidence                         |
+| Failure Mode  | Flags non-native speakers as AI      | Flags verified facts as True (regardless of author) |
+| Output        | "98% AI Probability"                 | "Claim contradicted by NASA"                        |
+| Actionability | Low (What do I do with probability?) | High (I can see the proof)                          |
 
-You're creating a new category: YouTube Content Verification Tools.
+## `The Vision` (i just like to repeat this)
 
-{/* **Instant fact-checking for YouTube videos.**
-
-SlopScore.ai is a browser extension that analyzes YouTube videos
-in 30 seconds to tell you:
-
-- Are the claims accurate?
-- Are sources credible?
-- Is content AI-generated or human-verified?
-
----
-
-## Why SlopScore.ai?
-
-- ✅ Automates professional fact-checking (lateral reading)
-- ✅ Detects AI-citing-AI echo chambers
-- ✅ Provides evidence, not opinions
-- ✅ Works in 30 seconds vs. hours of manual research
-
----
-
-## How It Works (30-second overview)
-
-1. Paste a YouTube URL
-2. Our AI agents analyze claims, sources, and visuals
-3. Get a Trust Report with verified evidence
-4. See verified alternatives */}
+We are building `middleware for trust`. In a future where most content will be AI-generated, users need a tool that filters for accuracy, **ensuring that the efficiency of AI doesn't come at the cost of truth**.

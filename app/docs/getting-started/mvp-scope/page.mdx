@@ -1,1 +1,57 @@
-# MVP Scope
+# Our MVP Scope
+
+**Timeframe:** 24 Hours<br/>
+**Primary Goal:** A working Web App that takes a YouTube URL and returns a Trust Report.
+
+To win this hackathon, we must be ruthless with our scope. We are prioritizing depth of verification over breadth of features or response time.
+
+## 🟢 The "Must-Haves" (Core Path)
+
+We are building a **Web Application** first. If time permits, we will port the logic to a Chrome Extension, but the Web App is the safest demo environment.
+
+### 1. Input & Extraction
+
+- **UI:** Simple search bar ("Paste YouTube URL").
+- **Extraction:** Fetch video transcript using `youtube-transcript` (npm package) or `YouTube Data API`.
+- **Metadata:** Fetch video title, channel name, and description (for links).
+
+### 2. The Agentic Workflow
+
+- **Claim Extraction:** Identify the top 3-5 verifiable claims (ignore opinions).
+- **Claim Verification:** Query **Google Fact Check Tools API** first. If no result, fallback to **Brave Search** to find corroborating sources.
+- **Citation Tracing (The Differentiator):** Extract links from the video description. Visit them and check:
+  - Are they 404s?
+  - Are they known low-quality domains (newly registered)?
+  - Do they cite other known low-quality domains (The Echo Chamber)?
+
+### 3. The Output (Trust Report)
+
+- **SlopScore:** A calculated 0-100 score (Weighted: 40% Accuracy, 40% Sources, 20% Channel).
+- **Evidence List:** "Claim X is FALSE because Reuters says Y."
+- **Source Health:** "This video cites `news-daily-24.com`, which was created 2 weeks ago."
+
+---
+
+## 🔴 The "Won't-Haves" (Ruthless Cuts)
+
+To ensure we finish, we are explicitly **NOT** building these features during the hackathon:
+
+1.  **❌ Visual Analysis:** We will NOT analyze video frames, thumbnails, or deepfakes. It is too slow, expensive, and unreliable for a 24h MVP.
+2.  **❌ User Authentication:** No login/signup required. The tool is open to all.
+3.  **❌ History/Dashboard:** We won't save user history.
+4.  **❌ Complex Interactive Graphs:** We will show citation chains as a simple list or static tree, not a complex D3.js interactive force graph.
+5.  **❌ Database storage:** We will not store any data for the MVP (this will only change if its extremely necessary for the project to work).
+
+---
+
+## The "Wow" Moment (Demo Goal)
+
+The demo succeeds if we can show this specific flow in under 60 seconds:
+
+1.  **Paste URL** of a viral "Science" video (that is actually AI slop).
+2.  **The Reveal:** SlopScore shows a **Red Alert**.
+3.  **The Proof:** We expand a section to show:
+    - "Claim A is contradicted by NASA."
+    - "Source B is a blog that cites Source C, which cites Source B (Circular Loop)."
+
+This specific insight `proving the Echo Chamber` is our winning feature.
