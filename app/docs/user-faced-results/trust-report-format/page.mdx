@@ -1,0 +1,105 @@
+# Trust Report Format
+
+The **Trust Report** is the `final output` presented to the user. It is designed to answer three questions in under 30 seconds:
+
+1.  **Should I trust this?** (The Score)
+2.  **Why?** (The Summary)
+3.  **Prove it.** (The Evidence)
+
+---
+
+## The Hero Section (One line Verdict)
+
+The top of the report provides an `immediate, high-level assessment` of the video's informational integrity.
+
+### The SlopScore
+
+A dynamic meter ranging from **0 to 100**.
+
+- **0-29 (🟢 Green):** **`VERIFIED`**. The video cites authoritative sources and claims align with consensus.
+- **30-59 (🟡 Yellow):** **`CAUTION`**. Mixed accuracy. The video may have valid points but relies on weak sources or contains unverified claims.
+- **60-100 (🔴 Red):** **`HIGH RISK`**. Significant density of falsehoods, hallucinations, or circular citations.
+
+### The "Why" Summary
+
+A generated one-sentence explanation of the score, preventing the "Black Box" problem.
+
+> _Example: "This video makes 12 factual claims. 3 are directly contradicted by NASA data, and the primary source cited is a known content farm."_
+
+---
+
+## Claim Analysis (The "Fact Check")
+
+This section lists the specific factual assertions extracted from the video transcript. We prioritize **quality over quantity**, showing the top 5-8 most significant claims.
+
+### UI Components per Claim:
+
+1.  **`The Quote:`** The exact text extracted from the transcript.
+2.  **`The Status Badge:`**
+    - `✅ TRUE`: Supported by multiple authoritative sources.
+    - `❌ FALSE`: Contradicted by a high-authority source.
+    - `⚠️ UNVERIFIED`: No reliable evidence found (neither true nor false).
+    - `👻 HALLUCINATED`: The video attributes this claim to a source (e.g., "Harvard says..."), but the source has no record of it.
+3.  **`The Evidence Link:`** A direct link to the source used to verify/debunk the claim (e.g., a Reuters article or Google Fact Check entry).
+
+```ts filename="/example-claim-data.ts" copy
+// Example Data Structure for UI
+const returning_claims = [
+  {
+    claim: "Eating dirt cures immunity",
+    status: "FALSE",
+    evidence: {
+      source: "Mayo Clinic",
+      url: "https://mayoclinic.org/dirt-myth",
+    snippet: "There is no scientific evidence supporting soil ingestion..."
+  }
+}
+```
+
+---
+
+## Citation Audit (The "Echo Chamber" Detector)
+
+This section visualizes the `Paper Trail` of the video.<br/>
+**It answers:** `Where is this information coming from?`
+
+### Source Indicators
+
+We analyze every link in the description and every verbally mentioned source.
+
+- `🟢 Authoritative`: Link goes to a .gov, .edu, or verified news domain.
+- `🟡 Low Credibility`: Link goes to a domain registered < 6 month ago (common for AI content farms).
+- `⚠️ Broken Link`: 404 Error (indicates low effort/maintenance).
+- `🚨 Echo Chamber` (The "Wow" Feature):
+  - Definition: Source A cites Source B, and Source B cites Source C and Source C sites source A.
+  - UI Representation: A warning badge labeled "Circular Citation Detected". This is a definitive sign of manufactured consensus.
+
+---
+
+## Transparency Check
+
+A breakdown of how open the creator is about their sources.
+
+- `"Trust Me Bro"`: If a video makes factual claims (Science/News) but provides zero links or verbal citations, this section flags a Transparency Gap.
+- `Vague Attribution`: Penalizes phrases like "Scientists say" without naming the scientists.
+
+---
+
+## How to Interpret "False Positives"
+
+We explicitly design the UI to handle nuance.
+
+- `Scenario`: A video debunks a conspiracy theory. It mentions the false claim in order to disprove it.
+- `Risk`: Our agent might flag the false claim as "False" and penalize the video.
+- `Mitigation`: The Context Awareness in our prompt engineering looks for "Negation" (e.g., "It is not true that...").
+- `User Override`: The UI includes a `"Report Error"` button. If a user flags a false positive, it helps tune our prompts.
+
+## Summary of Indicators
+
+| Icon | Meaning           | Action Required                                                   |
+| :--- | :---------------- | :---------------------------------------------------------------- |
+| 🟢   | **Verified**      | Content is safe to consume.                                       |
+| 🟡   | **Caution**       | Verify specific claims yourself before sharing.                   |
+| 🔴   | **High Risk**     | Do not rely on this information without independent verification. |
+| 🔄   | **Circular Loop** | The sources are citing each other. High probability of AI Slop.   |
+| 👻   | **Hallucination** | The cited source does not exist.                                  |

@@ -1,1 +1,35 @@
 # Tech Stack
+
+We have chosen a "Lean & Mean" stack optimized for the 24-hour hackathon timeframe.
+
+## Frontend (The Face)
+
+- **`Next.js 14 (App Router)`**: Framework for the Web App.
+- **`Tailwind CSS`**: For rapid UI styling (Trust Card components).
+- **`Lucide React`**: For icons (Alert triangles, Checkmarks).
+- **`Shadcn/UI`**: Pre-built components to save design time.
+
+## Intelligence (The Brain)
+
+- **`LangChain.js`**: Framework for interacting with LLMs.
+- **`LangGraph`**: For orchestrating the stateful multi-agent workflow.
+- **`Gemini 3 Pro`**: The underlying LLM for extraction and synthesis.
+
+## Data & Tools (The Limbs)
+
+- **`youtube-transcript`**: NPM package to scrape video text without API quotas.
+- **`Google Fact Check Tools API`**: The source of truth for verification.
+- **`Brave Search API`**: The fallback for general web research.
+- **`Cheerio`**: For lightweight scraping of cited articles (to check titles/links).
+
+## Infrastructure
+
+- **`Vercel`**: Hosting for the Next.js app and API routes.
+
+## Excluded (Out of Scope)
+
+To maintain velocity, we are **NOT** using:
+
+- _Convex / Supabase_ (No database required for MVP).
+- _Python_ (We are staying full-stack TypeScript/JS for unified code).
+- _Vector DBs_ (Pinecone/Qdrant) - Not needed for this specific logic.

@@ -1,1 +1,305 @@
-# Slopscore explained
+# SlopScore Explained
+
+The **SlopScore** is a measure of **informational risk**. Unlike other tools that guess _who_ wrote the content, we measure _how accurate and transparent_ the content is.
+
+Unlike simple "AI detectors" that guess authorship, SlopScore calculates the **density of misinformation** relative to the total volume of content. This ensures that a long, well-researched video isn't unfairly penalized for a single minor error, while a short video filled with hallucinations is correctly flagged.
+
+## The User Psychology
+
+When a user clicks "Analyse," they have 3 specific questions, in this order:
+
+1. `The Verdict`: "Is this video BS or safe?" (Instant gratification).
+2. `The Proof`: "Why do you say that?" (Skepticism).
+3. `The Depth`: "Show me the sources so I can check myself." (Verification).
+
+---
+
+## The Core Formula
+
+The SlopScore is a weighted aggregate of three verified dimensions:
+
+```ts filename="/slopScore.ts" copy
+let claimScore = 0,
+  sourceScore = 0,
+  transparencyScore = 0;
+
+const slopScore =
+  claimScore * 0.6 + sourceScore * 0.3 + transparencyScore * 0.1;
+```
+
+Where:
+
+- **ClaimScore:** The proportion of claims found to be false or hallucinated. (60% Weight).
+- **SourceScore:** The health and integrity of the citation network. (30% Weight).
+- **TransparencyScore:** A baseline check on metadata and disclosure. (10% Weight).
+
+---
+
+## 1. The Claim Score - 60% Weight
+
+This is the most important metric. It measures the **Accuracy Ratio**. We do not just count errors; we measure the **density of error** adjusted for the agent's confidence.
+
+### The Logic
+
+```ts filename="/claimScore.ts" copy
+const claimScore = (sum(severity * confidence) / totalClaimsChecked) * 100;
+```
+
+### Severity Weights
+
+Not all errors are equal.
+
+| Severity Level    | Weight  | Description                                                                          |
+| :---------------- | :------ | :----------------------------------------------------------------------------------- |
+| **Hallucination** | **1.0** | Claiming a source said X when they didn't, or inventing a source. This is peak Slop. |
+| **Proven False**  | **0.8** | Direct contradiction by a high-authority source (e.g., Reuters/NASA).                |
+| **Unverified**    | **0.2** | No evidence found (neutral/slight risk).                                             |
+| **True**          | **0.0** | Verified fact (reduces the average).                                                 |
+
+### Why this is Robust:
+
+- **Video A (100 Claims, 2 False):** `(2 * 0.8) / 100 = 0.016` → **Claim Score: 1.6** (Very Low Risk).
+- **Video B (5 Claims, 2 False):** `(2 * 0.8) / 5 = 0.32` → **Claim Score: 32** (Medium Risk).
+
+_The score scales with the content volume._
+
+---
+
+## 2. The Source Score - 30% Weight
+
+This measures the **Network Integrity**. It checks if the video exists in an informational vacuum or an echo chamber.
+
+### The Logic
+
+```ts filename="/sourceScore.ts" copy
+const sourceScore = baseIntegrity + echoPenalty - authorityBonus;
+```
+
+### Source Score Calculation
+
+The Source Score ranges from **0 (Perfect Sources)** to **100 (Toxic Sources)**.
+It is calculated using a **Points Accumulation System**. We start at **0** and add penalties for bad links or subtract bonuses for good links.
+
+#### The Point System
+
+We analyze every unique link found in the video description.
+
+| Link Type             | Points Added/Subtracted   | Reason                                                                           |
+| :-------------------- | :------------------------ | :------------------------------------------------------------------------------- |
+| **🔗 Broken Link**    | **+10 points** (per link) | Indicates 404/Dead link. Shows negligence or lack of maintenance.                |
+| **👶 Fresh Domain**   | **+25 points** (per link) | Domain registered < 30 days ago. High probability of disposable content farm.    |
+| **🛡️ Authority Link** | **-15 points** (per link) | Link to `.gov`, `.edu`, `nature.com`, `reuters.com`, etc. Validates credibility. |
+| **😐 Neutral Link**   | **0 points**              | Standard blogs, social media, or unverified news sites.                          |
+| **🔄 Echo Loop**      | **FORCE SCORE TO 100**    | **Critical Failure.** Source A cites Source B, and Source B cites Source A.      |
+
+---
+
+## 3. The Transparency Score - 10% Weight
+
+This measures **intent**. Good research typically shows its work.
+
+- **No Sources Provided:** Score = 100 (Max penalty).
+- **Vague Attribution:** Score = 50 (e.g., "Scientists say..." vs "Dr. Smith says...").
+- **Full Transparency:** Score = 0.
+
+---
+
+## Scenario Simulation
+
+Let's see how this robust math handles two different edge cases.
+
+### Scenario A: The "Gold Standard" (Educational Channel)
+
+_A 15-minute video about physics. 10 claims made. 3 authoritative sources cited._
+
+**Claims (10 Total):**
+
+- 10 Verified True.
+- **ClaimScore:** `(0 / 10) * 100 = 0`
+
+**Sources:**
+
+- Link 1: `nasa.gov` (Authority: -15)
+- Link 2: `arxiv.org` (Authority: -15)
+- Link 3: `wikipedia.org` (Authority: -15)
+- **SourceScore:** `0 - 45 = -45` (Clamped to 0).
+
+**Transparency:**
+
+- Links provided.
+- **TransparencyScore:** `0`
+
+**Final Calculation:**
+
+```
+(0 * 0.6) + (0 * 0.3) + (0 * 0.1) = 0
+```
+
+**Verdict:** 🟢 **VERIFIED (Score: 0/100)**
+_Result: Perfect score. The system rewards high-quality research._
+
+---
+
+### Scenario B: The "Lazy Creator" (Broken Links)
+
+_A tech tutorial. Accurate info, but the creator linked to a dead page and a personal blog._
+
+**Claims (5 Total):**
+
+- 4 Verified True.
+- 1 Unverified (Niche technical claim).
+- **ClaimScore:** `((1 * 0.2) / 5) * 100 = 4`
+
+**Sources:**
+
+- Link 1: `github.com` (Neutral: 0)
+- Link 2: `old-docs.com` (Broken/404: +10)
+- **SourceScore:** `0 + 0 + 10 = 10`
+
+**Transparency:**
+
+- Links provided.
+- **TransparencyScore:** `0`
+
+**Final Calculation:**
+
+```
+(4 * 0.6) + (10 * 0.3) + (0 * 0.1) = 2.4 + 3 = 5.4
+```
+
+**Verdict:** 🟢 **VERIFIED (Score: 5/100)**
+_Result: The system is forgiving. A broken link is sloppy, not malicious. It doesn't trigger a red flag._
+
+---
+
+### Scenario C: The "Trust Me Bro" (No Sources)
+
+_A health advice video. Makes bold claims but provides zero links in the description._
+
+**Claims (8 Total):**
+
+- 6 Verified True.
+- 2 Verified False (Contradicted by medical consensus).
+- **ClaimScore:** `((2 * 0.8) / 8) * 100 = 20`
+
+**Sources:**
+
+- None provided.
+- **SourceScore:** 0 (Skipped).
+
+**Transparency:**
+
+- No sources provided.
+- **TransparencyScore:** `100` (Max Penalty).
+
+**Final Calculation:**
+
+```
+(20 * 0.6) + (0 * 0.3) + (100 * 0.1) = 12 + 0 + 10 = 22
+```
+
+**Verdict:** 🟢 **VERIFIED (Score: 22/100)**
+_Result: Even though the score is Green, the UI will show a specific "Transparency Warning." If the claims were worse (e.g., 4 False), this would quickly tip into Yellow._
+
+---
+
+### Scenario D: The "Content Farm" (Fresh Domains)
+
+_A breaking news video using AI voiceover. Cites a website created 3 days ago._
+
+**Claims (4 Total):**
+
+- 2 True.
+- 1 Unverified.
+- 1 Hallucinated Source (Cites a study that doesn't exist).
+- **ClaimScore:** `((1 * 0.2) + (1 * 1.0)) / 4 * 100 = 30`
+
+**Sources:**
+
+- Link 1: `daily-breaking-24.xyz` (Fresh Domain: +25).
+- **SourceScore:** `25`
+
+**Transparency:**
+
+- Links provided.
+- **TransparencyScore:** `0`
+
+**Final Calculation:**
+
+```
+(30 * 0.6) + (25 * 0.3) + (0 * 0.1) = 18 + 7.5 = 25.5
+```
+
+**Verdict:** 🟢 **VERIFIED (Score: 26/100)**
+_Wait, why is this Green? Because only 1 of 4 claims was hallucinated. If the video was pure misinformation (e.g., 3/4 claims false), the Claim Score would spike to 60+, pushing the total into Caution. This proves the system is conservative—it needs strong evidence to flag content._
+
+---
+
+### Scenario E: The "Echo Chamber" (Circular Loop)
+
+_A conspiracy theory video. Cites a blog that cites the video back._
+
+\*\*Claims (6 Total):
+
+- 3 Unverified (Vague theories).
+- 3 False (Contradicted by data).
+- **ClaimScore:** `((3 * 0.2) + (3 * 0.8)) / 6 * 100 = 50`
+
+**Sources:**
+
+- Link 1: `truth-uncovered.net`
+- Check: `truth-uncovered.net` cites the YouTube channel.
+- **SourceScore:** `100` (Echo Chamber Penalty).
+
+**Transparency:**
+
+- Links provided.
+- **TransparencyScore:** `0`
+
+**Final Calculation:**
+
+```
+(50 * 0.6) + (100 * 0.3) + (0 * 0.1) = 30 + 30 = 60
+```
+
+**Verdict:** 🔴 **HIGH RISK (Score: 60/100)**
+_Result: The circular citation is the smoking gun. It instantly pushes a "borderline" video into the Red zone._
+
+---
+
+## Why Transparency Matters?
+
+The logic for including Transparency—even at a low 10% weight—is based on **Information Accountability**.
+
+### 1. The "Burden of Proof" Principle
+
+- **Logic:** A video that hides its sources is inherently riskier than one that shows its work. Even if the facts turn out to be true, the process was opaque.
+
+### 2. A Proxy for "Low-Effort" AI
+
+- **Logic:** Most "Slop Farms" skip the citation step because it kills their automation speed. Therefore, a lack of transparency is a strong statistical proxy for low-effort, mass-produced content.
+
+### 3. Protecting the "Citation Tracer"
+
+- **Logic:** We cannot verify the source network if no network is provided. The Transparency Score acts as a small penalty for "blinding" the verification system.
+
+### 4. Why only 10%? (The Safety Valve)
+
+We keep the weight low (10%) to protect lazy but honest creators.
+
+**Scenario:** A Professor records a lecture. Everything they say is true. They provide no links because they are old-school.
+
+- **Claim Score:** 0 (All True).
+- **Source Score:** 0 (Skipped).
+- **Transparency Score:** 100 (Max Penalty).
+- **Final SlopScore:** `(0 * 0.6) + (0 * 0.3) + (100 * 0.1) = 10`
+- **Verdict:** 🟢 **VERIFIED (Score: 10/100)**
+
+**Logic:** The penalty is just enough to prevent a "Perfect 0" score (because they weren't transparent), but not enough to falsely flag them as Slop.
+
+Transparency measures **Intent**.
+
+- **Good Faith:** "Here are my sources, check me."
+- **Bad Faith:** "Trust me, bro."
+
+We penalize the "Trust me, bro" approach because in the age of AI hallucinations, blind trust is dangerous.

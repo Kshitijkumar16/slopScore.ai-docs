@@ -1,38 +1,52 @@
 # System Overview
 
-SlopScore.ai uses a multi-agent architecture where specialized 
-AI agents work in parallel to verify different aspects of 
+SlopScore.ai uses a multi-agent architecture where specialized
+AI agents work in parallel to verify different aspects of
 video content.
 
----
+The architecture follows a `stateless, request-response model`. We do not store user history or require authentication. The system is designed for immediate, real-time analysis.
 
-## High-Level Flow
+## High-Level Data Flow
 
-User pastes YouTube URL
-↓
-[YouTube Data API] extracts transcript + metadata
-↓
-[Supervisor Agent] orchestrates 4 specialized agents:
-├─ Claim Verifying Agent
-├─ Author Reputation Agent
-├─ Visual Analysis Agent
-└─ (All run in parallel)
-↓
-[Supervisor Agent] synthesizes findings
-↓
-User sees Trust Report
+1.  **Input:** User pastes a YouTube URL in the Next.js Frontend.
+2.  **Extraction:** The backend fetches the transcript and metadata immediately.
+3.  **Orchestration:** A `LangGraph Supervisor` receives the data and delegates tasks to worker agents.
+4.  **Parallel Execution:** Agents (Claim Verifier, Citation Tracer) run simultaneously to minimize latency.
+5.  **Synthesis:** The Supervisor aggregates the results into a structured JSON object.
+6.  **Visualization:** The Frontend renders the Trust Report.
 
+## Architecture Diagram
 
-[View Detailed Workflow →]
+```mermaid
+graph TD
+    User[User Interface] -->|POST /api/analyze| API[Next.js API Route]
 
----
+    subgraph "Extraction Layer"
+        API -->|Fetch| YT[YouTube Data/Transcript]
+    end
 
-## Key Components
+    subgraph "Agentic Layer (LangGraph)"
+        YT -->|Context| Supervisor[Supervisor Agent]
+        Supervisor -->|Delegate| ClaimAgent[Claim Verifying Agent]
+        Supervisor -->|Delegate| CitationAgent[Citation Tracer Agent]
+        Supervisor -->|Delegate| SourceAgent[Source Credibility Agent]
 
-**Frontend**: WXT browser extension + Next.js
-**Backend**: Node.js on Vercel Edge
-**Orchestration**: LangChain + LangGraph
-**Database**: Convex (real-time caching)
-**APIs**: Google Fact Check, Brave Search, Hugging Face
+        ClaimAgent -->|Tools| GoogleFactCheck[Google Fact Check API]
+        ClaimAgent -->|Tools| Brave[Brave Search API]
 
-[View Tech Stack Details →]
+        CitationAgent -->|Tools| Scraper[Web Scraper]
+    end
+
+    ClaimAgent -->|Result| Supervisor
+    CitationAgent -->|Result| Supervisor
+    SourceAgent -->|Result| Supervisor
+
+    Supervisor -->|Final JSON| API
+    API -->|Trust Report| User
+```
+
+## Key Design Decisions
+
+- `Edge-Ready Logic`: Where possible, we use lightweight fetching logic compatible with Vercel Edge functions to reduce cold starts.
+- `Strict Timeouts`: To ensure the UI doesn't hang, every agent has a hard timeout (e.g., 15 seconds). If an agent fails, the report is generated with partial data rather than crashing.
+- `No Persistence`: As per the MVP scope, we are not using a database. Every analysis is fresh.
