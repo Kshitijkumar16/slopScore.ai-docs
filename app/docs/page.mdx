@@ -1,12 +1,38 @@
-# SlopScore.ai Docs
+# Introduction
 
-Welcome to SlopScore.ai documentation!
+This document serves as the "North Star" for the SlopScore.ai project.
+
+It defines exactly what we are building, why we are building it, and what success looks like for our hackathon MVP.
 
 ---
 
-## What is SlopScore.ai?
+## Slopscore.ai
 
-### What is AI slop?
+**SlopScore.ai** is an `agentic verification engine` designed to "restore trust" in YouTube content.
 
-### How slopscore.ai helps?
+- In an era where AI content farms ("AI Slop") can produce professional-looking videos at scale, visual quality is no longer a proxy for truth.
+- SlopScore.ai acts as a professional fact-checker to verify claims and citations in real-time.
 
+## What It Does
+
+Instead of guessing if a video was made by AI, SlopScore.ai analyzes the **informational integrity** of the content:
+
+1.  **`Verifies Claims:`** Extracts factual assertions from the transcript and cross-references them against authoritative databases (Google Fact Check, Reuters, etc.) along with web search for fact-checking.
+2.  **`Traces Citations:`** Follows links in the description to determine if they lead to credible primary sources or circular "content farm" loops.
+3.  **`Scores Credibility:`** Generates a transparency report based on evidence, not AI detection probabilities.
+
+## Documentation Structure
+
+This documentation serves as the "Holy Bible" for us.
+
+- **[Getting Started](/docs/getting-started/mission):** Our core philosophy ("Accuracy > Authorship"), definition of "Slop," and the strict MVP scope for the hackathon.
+- **[Architecture](/docs/architecture/system-overview):** The high-level system design, tech stack (Next.js, LangChain, Convex), and data flow.
+- **[Agents](/docs/agents/supervisor):** Detailed logic for our multi-agent system, including the Claim Verifier and Citation Tracer.
+- **[Tools & Integrations](/docs/tools-and-integrations/brave-search-tool):** Reference guides for the APIs we use (Brave Search, Google Fact Check).
+- **[Pitch & Defence](/docs/pitch/the-narrative):** Preparation for the judges, including our demo script and Q&A strategy.
+
+## Quick Links
+
+- **GitHub Repo:** [Link to your repo]
+- **Design File:** [Link to Figma/Design]
+- **Kanban Board:** [Link to Project Management]

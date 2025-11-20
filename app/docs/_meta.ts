@@ -7,6 +7,10 @@ export default {
     title: "Getting started",
     theme: {},
   },
+  "user-faced-results": {
+    title: "User-faced Results",
+    theme: {},
+  },
   architecture: {
     title: "Architecture",
     theme: {},
@@ -19,8 +23,12 @@ export default {
     title: "Tools & Integrations",
     theme: {},
   },
-  "understanding-results": {
-    title: "Understanding Results",
+  "implementation-guide": {
+    title: "Implementation Guide",
+    theme: {},
+  },
+  "pitch-and-defence": {
+    title: "Pitch & Defence",
     theme: {},
   },
 };
