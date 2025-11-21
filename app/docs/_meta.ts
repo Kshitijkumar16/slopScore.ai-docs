@@ -21,6 +21,7 @@ export default {
   },
   "tools-and-integrations": {
     title: "Tools & Integrations",
+    display: "hidden",
     theme: {},
   },
   "implementation-guide": {

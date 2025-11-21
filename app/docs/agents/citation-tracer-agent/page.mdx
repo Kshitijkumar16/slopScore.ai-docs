@@ -1,1 +1,161 @@
-# Source check agent
+# Citation Tracer Agent
+
+The Citation Tracer Agent is the "Network Auditor" of the system. It maps the external ecosystem of the video to detect if the creator is citing legitimate research or relying on a network of low-quality content farms ("The Echo Chamber").
+
+This agent is responsible for calculating the `sourceScore` and flagging circular reporting loops.
+
+---
+
+## Why this agent?
+
+- `The Problem`: AI Content Farms often cite other AI-generated articles to create a `facade of credibility`. A video might have 10 citations, but if they all point to 1-month-old blogs that cite each other, the information is worthless.
+- `The Gap`: Traditional fact-checkers look at claims. They rarely audit the network topology of the sources.
+- `The Solution`: By tracing the digital paper trail, we can prove when a video is part of a misinformation loop, regardless of the actual fact we are checking.
+
+---
+
+## Purpose
+
+The purpose of this agent is to audit the structural integrity of the video's sources.
+
+1. `Detect Echo Chambers`: Identify if Source A cites Source B, and Source B cites Source A (Circular Loop).
+2. `Assess Domain Health`: Flag disposable domains (registered < 30 days ago) often used for "Burner" AI content.
+3. `Verify Authority`: Recognize and reward links to established institutions (NASA, Reuters, .edu).
+
+---
+
+## Key Concepts & Techniques
+
+### The Echo Chamber (Circular Citation)
+
+An Echo Chamber occurs when a set of sources cite one another to validate a claim without any primary evidence entering the loop.
+
+`Scenario`: Video Description links to Blog A and Blog B.
+`Detection`: We scrape Blog A. If Blog A contains a hyperlink to Blog B (or back to the YouTube Channel), we flag this as a closed information loop.
+
+### Domain Health (WHOIS)
+
+"Slop" is often hosted on fresh domains to evade ban-lists.
+`Fresh Domain`: Registered < 6 month ago = 🔴 High Risk.
+`Established Domain`: Registered > 5 years ago = 🟢 Low Risk.
+
+### The "Transparency Gap"
+
+If the video description contains zero external links, this agent cannot run its core logic.
+`Action`: It returns a `NONE_PROVIDED` status. After which we manually try to extract any `verbal citations` from the transcript of the video.
+`Result`: The Supervisor applies a Transparency Penalty to the final score (because "Trust Me Bro" is not a valid citation).
+
+---
+
+## Agent Workflow
+
+This agent first extracts the citations from the video and then traces them to find any echo chamber loops, while also checking the domain health of the citation links.
+
+### Overview of steps
+
+1. `Extraction`: Parse the video description using regex to identify external URLs, strictly filtering out social media and affiliate links to isolate informational sources.
+2. `Fallback Check`: If no description links are found, analyze the transcript for "Verbal Citations" (e.g., "According to NASA") and resolve them to domains to ensure fair assessment.
+3. `Health Check`: Validate domain credibility in parallel by cross-referencing against an authority whitelist, checking registration age via WHOIS, and verifying HTTP status codes.
+4. `Network Trace`: Perform a depth-1 scrape of non-authoritative sources to identify "Echo Chambers"—specifically checking if Source A links back to Source B or the original video.
+5. `Score`: Calculate the final sourceScore by applying weighted penalties for fresh domains/broken links or maxing out the risk score if circular loops are detected.
+
+### Extraction Logic
+
+We parse the video description to isolate relevant external links.
+
+1. **Extract**: Regex/Pattern match all URLs.
+2. **Filter**: Remove "Noise" links (Social media, Amazon affiliates, Merch stores, Discord invites).
+3. **Target**: Keep only informational domains (News, Blogs, PDFs, Academic sites).
+
+### "No Link" Fallback
+
+If zero valid links are found in the description:
+
+- `Action`: The agent scans the Video Transcript data (passed from the extraction phase) for Verbal Citations (e.g., "According to The New York Times...").
+- `Resolution`: If verbal sources are found, we deem the video as one with no citations at all.
+- `Failure State`: If neither description links nor verbal citations exist, return NONE_PROVIDED.
+- `Result`: The Supervisor applies a Transparency Penalty to the final score.
+
+### Health & Authority Check (Parallel)
+
+For every target URL (from description or verbal fallback), we run lightweight checks:
+
+- `Authority Match`: Check domain against a hardcoded Allowlist (e.g., .gov, .edu, reuters.com, nature.com).
+- `If Match`: Mark as AUTHORITATIVE. Skip scraping (save time).
+- `WHOIS Lookup`: If not authoritative, check the domain creation date.
+- `If < 180 days`: Mark as FRESH_DOMAIN (Slop Signal).
+- `Liveness`: Check HTTP Status (is it a 404?).
+
+### The Tracer (Echo Chamber Detection)
+
+For non-authoritative links, we perform a Depth-1 Scrape.
+
+1. `Fetch HTML`: Use cheerio to grab the page content (with 5s timeout).
+2. `Extract Outbound Links`: Find all `<a href="...">` tags on the page.
+3. `Cross-Reference`:
+   - Does Source A link to Source B (another link in the video description)?
+   - Does Source A link back to the YouTube Channel?
+     If Yes: Flag as `ECHO_CHAMBER` (Circular Loop).
+
+### Scoring Logic
+
+Calculate the sourceScore based on the findings.
+
+| Finding              | Penalty Points  |
+| :------------------- | :-------------- |
+| Broken Link (404)    | +10             |
+| Fresh Domain         | +25             |
+| Echo Chamber         | FORCE 100 (MAX) |
+| Authoritative Source | -15 (Bonus)     |
+
+---
+
+## Agent's Final Output
+
+```ts filename="/final-output-citation-tracer-agent.ts" copy
+interface CitationTracerOutput {
+  agentName: "CitationTracerAgent";
+  meta: {
+    totalLinksFound: number;
+    validLinksAnalyzed: number;
+    processingTimeMs: number;
+  };
+  // Used for the Source Score ($S_s$) calculation
+  scoreComponents: {
+    basePenalty: number;
+    authorityBonus: number;
+    echoChamberDetected: boolean;
+    finalSourceScore: number; // 0-100
+  };
+  // The list of sources for the UI
+  sources: Array<{
+    url: string;
+    domain: string;
+    status: "AUTHORITATIVE" | "NEUTRAL" | "SUSPICIOUS" | "DEAD_LINK";
+    flags: Array<"FRESH_DOMAIN" | "ECHO_CHAMBER" | "SELF_CITATION">;
+    domainAgeDays: number | null;
+    outboundLinksChecked: boolean;
+  }>;
+  // Specific details on the loop if found
+  echoChamberDetails?: {
+    nodes: string[]; // [Source A, Source B]
+    type: "CIRCULAR_LOOP" | "SELF_PROMOTION";
+  };
+}
+```
+
+---
+
+## Future Enhancements
+
+1. Recursive Tracing (Depth 2+): Follow links inside the cited articles to find the primary source.
+2. Content Fingerprinting: Check if the text on "Source A" is identical to "Source B" (detecting syndicated slop).
+3. Author Verification: Scrape the "About Us" page of the cited blog to see if the author exists (or is an AI persona).
+
+---
+
+## Related Documentation
+
+- [Supervisor Agent]()
+- [Tech Stack]() (Cheerio/WHOIS)
+- [SlopScore Calculation]()

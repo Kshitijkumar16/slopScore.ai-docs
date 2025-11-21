@@ -1,5 +1,186 @@
 # Supervisor & Synthesis agent
 
-This is the head
+The Supervisor Agent is the `"Conductor"` of the SlopScore.ai system. It does not perform the research itself; instead, it manages the state of the analysis, routes tasks to specialized worker agents, and synthesizes their findings into the final Trust Report.
 
-## 
+It is built using LangGraph to ensure a resilient, stateful workflow that can handle parallel processing and error recovery.
+
+## Why this agent?
+
+- **Separation of Concerns**: By keeping the "Manager" separate from the "Workers," we prevent the LLM context window from getting cluttered. The Claim Agent focuses purely on text, and the Citation Agent focuses purely on links.
+- **Parallel Efficiency**: To hit our 30-second target, we cannot run serially. The Supervisor triggers all workers simultaneously.
+- **Fault Tolerance**: If the Citation Tracer fails (e.g., a timeout), the Supervisor ensures the Claim Verification results are still returned to the user.
+
+---
+
+## Purpose
+
+- **Orchestration**: Delegates the right data to the right agent (Transcript → Claim Agent, Links → Citation Agent).
+- **Transparency Scoring**: Calculates the Transparency Score ($T_s$) based on the presence or absence of sources.
+- **Synthesis**: Aggregates all partial results, applies the SlopScore Formula, and formats the final JSON for the frontend.
+
+---
+
+## Key Concepts & Techniques
+
+### The State Graph (LangGraph)
+
+We model the analysis as a graph where:
+
+- **State**: A shared JSON object passed between nodes (containing the video ID, transcript, partial results, and errors).
+- **Nodes**: The individual agents (ClaimVerifier, CitationTracer).
+- **Edges**: The logic flow (Start → Parallel Execution → Synthesis → End).
+
+### The Transparency Check ($T_s$)
+
+Before delegation, the Supervisor performs a logic check:
+
+- **Condition**: Does `videoDescription` contain external links?
+- **Condition**: Does `transcript` contain verbal cues like "Link in bio" or "Sources below"?
+- **Calculation**: If both are missing, set $T_s = 100$ (High Penalty).
+
+### The Weighted Synthesis
+
+The Supervisor is the only agent that knows the SlopScore Formula:
+
+```ts filename="slopscore-calc.ts" copy
+const Slopscore =
+  claimScore * 0.6 + citationScore * 0.3 + transparancyScore * 0.1;
+```
+
+---
+
+## Agent Workflow
+
+### Overview of steps
+
+1. `Initialization`: Receive user input (URL), fetch metadata/transcript via the Extraction Layer, and initialize the shared graph state.
+2. `Transparency Check`: Analyze metadata to calculate the initial transparencyScore and determine if the Citation Tracer is needed.
+3. `Parallel Delegation`: Route the transcript to the Claim Verifying Agent and the links to the Citation Tracer Agent simultaneously.
+4. `Aggregation`: Wait for all worker threads to complete (or timeout), collecting their structured outputs into the shared state.
+5. `Synthesis`: Apply the scoring formula, generate the "Why" summary using an LLM, and format the final JSON payload.
+
+### Detailed Logic
+
+Step 1: `Define the State`
+Using LangGraph, we define the interface for the shared state.
+code
+
+```ts filename="supervisor-state.ts" copy
+interface AgentState {
+// Inputs
+videoId: string;
+transcript: string;
+metadata: VideoMetadata;
+
+// Worker Outputs
+claimReport: ClaimAgentOutput | null;
+citationReport: CitationTracerOutput | null;
+
+// Supervisor Calculations
+transparencyScore: number;
+finalSlopScore: number;
+errors: string[];
+}
+```
+
+Step 2: `The Graph Definition`
+
+We create a graph that branches out and merges back.
+code
+
+```ts filename="graph-definition.ts" copy
+const workflow = new StateGraph(AgentState)
+.addNode("transparency_check", transparencyLogic)
+.addNode("claim_verifier", claimVerifyingAgent)
+.addNode("citation_tracer", citationTracerAgent)
+.addNode("synthesizer", finalSynthesisLogic)
+
+// Flow
+.setEntryPoint("transparency_check")
+.addEdge("transparency_check", "claim_verifier")
+.addEdge("transparency_check", "citation_tracer") // Parallel branch
+.addEdge("claim_verifier", "synthesizer")
+.addEdge("citation_tracer", "synthesizer") // Merge point
+.compile();
+```
+
+Step 3: `Synthesis & Scoring`
+
+Once the nodes finish, the synthesizer node runs the math.
+code
+
+```Ts filename="synthesis-logic.ts" copy
+// 1. Normalize Scores
+const claimScore = calculateClaimScore(state.claimReport); // 0-100
+const sourceScore = state.citationReport?.scoreComponents.finalSourceScore || 0;
+const transparencyScore = state.transparencyScore;
+
+// 2. Weighted Formula
+const rawScore = (claimScore _ 0.6) + (sourceScore _ 0.3) + (transparencyScore \* 0.1);
+const finalScore = Math.min(Math.round(rawScore), 100);
+
+// 3. Risk Band
+const riskLevel = finalScore < 30 ? "LOW" : finalScore < 60 ? "MEDIUM" : "HIGH";
+```
+
+---
+
+## Agent's Final Output
+
+This is the exact JSON payload sent to the Next.js frontend. It combines data from all agents into a consumable format.
+code
+
+```ts filename="final-trust-report.ts" copy
+interface FinalTrustReport {
+meta: {
+videoId: string;
+analysisTimestamp: string;
+processingTimeMs: number;
+};
+
+// The Hero Section
+score: {
+value: number; // 0-100
+riskLevel: "LOW" | "MEDIUM" | "HIGH";
+breakdown: {
+claimScore: number;
+sourceScore: number;
+transparencyScore: number;
+};
+};
+
+// The "Why" Summary (Generated by LLM)
+summary: string;
+// e.g., "This video is High Risk. It contains 3 proven falsehoods and relies on a circular citation network."
+
+// Detailed Data (From Workers)
+claims: {
+total_checked: number;
+true_count: number;
+false_count: number;
+items: ClaimObject[]; // Passed from Claim Agent
+};
+
+citations: {
+status: "FOUND" | "NONE_PROVIDED";
+circular_loops: number;
+items: SourceObject[]; // Passed from Citation Agent
+};
+
+transparency: {
+score: number;
+notes: string[]; // e.g., ["No description links found", "Verbal citations detected"]
+};
+}
+```
+
+## Future Enhancements
+
+1. `Human-in-the-Loop`: Allow users to upvote/downvote the SlopScore, feeding data back into the Supervisor to adjust weights.
+2. `Dynamic Weighting`: Adjust the formula based on video category (e.g., for "News," weight Claims at 80%; for "Vlogs," weight Claims at 20%).
+
+## Related Documentation
+
+- [Claim Verifying Agent]()
+- [Citation Tracer Agent]()
+- [SlopScore Calculation]()
