@@ -103,3 +103,68 @@ We explicitly design the UI to handle nuance.
 | 🔴   | **High Risk**     | Do not rely on this information without independent verification. |
 | 🔄   | **Circular Loop** | The sources are citing each other. High probability of AI Slop.   |
 | 👻   | **Hallucination** | The cited source does not exist.                                  |
+
+---
+
+## Sample Report 1:
+
+- **Video Title:** "The Ultimate Guide to Water on Mars"
+- **Channel:** SpaceExplorer Daily
+- **Context:** An educational video discussing recent rover findings.
+
+### The Hero Section
+
+- **SlopScore:** **`12/100`** (🟢 **`VERIFIED`**)
+- **Summary:** _"This video accurately summarizes current NASA findings. While one timeline claim is outdated, the core scientific concepts are supported by authoritative sources."_
+
+### Claim Analysis (The "Fact Check")
+
+| Status       | Claim                                                                                        | Evidence                                                                           |
+| :----------- | :------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| ✅ **TRUE**  | "Mars has polar ice caps consisting of water ice and dry ice."                               | **Verified by NASA:** "Mars Polar Caps" (nasa.gov)                                 |
+| ✅ **TRUE**  | "The Perseverance rover landed in Jezero Crater to search for signs of ancient life."        | **Verified by JPL:** "Mission Overview" (jpl.nasa.gov)                             |
+| ❌ **FALSE** | "SpaceX has confirmed a manned Mars landing will happen in 2024."                            | **Contradicted by SpaceX:** Official timelines shifted to late 2020s. (spacex.com) |
+| ✅ **TRUE**  | "Liquid water cannot exist on the surface of Mars for long due to low atmospheric pressure." | **Verified by ESA:** "Water on Mars" (esa.int)                                     |
+
+### Citation Audit
+
+- `🟢 Authoritative`: **nasa.gov** (Mission Reports)
+- `🟢 Authoritative`: **science.org** (Peer-reviewed paper)
+- `⚠️ Broken Link`: **mars-society-blog.com/latest** (404 Error)
+
+### Transparency Check
+
+- **Status:** **Pass**. The creator explicitly links to NASA mission pages and Science Magazine articles in the description.
+
+---
+
+## Sample Report 2:
+
+- **Video Title:** "Mamdani BANNED? The Secret Court Order They Don't Want You To See!"
+- **Channel:** NY-Uncensored-News
+- **Context:** A viral political commentary video about NY Assembly Member Zohran Mamdani.
+
+### The Hero Section
+
+- **SlopScore:** **`88/100`** (🔴 **`HIGH RISK`**)
+- **Summary:** _"This video relies on hallucinated legal documents and circular citations from known content farms. Multiple core claims are directly contradicted by public records."_
+
+### Claim Analysis (The "Fact Check")
+
+| Status              | Claim                                                                                        | Evidence                                                                                                           |
+| :------------------ | :------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| ❌ **FALSE**        | "Zohran Mamdani has been officially expelled from the NY State Assembly as of this morning." | **Contradicted by NY Assembly Records:** Member status is Active. No expulsion proceedings exist. (nyassembly.gov) |
+| 👻 **HALLUCINATED** | "A sealed Supreme Court filing (Case 44-B) proves election interference in Astoria."         | **No Record Found:** No such case number or filing exists in NY State Court database.                              |
+| ❌ **FALSE**        | "Mamdani voted to increase NY subway fares to $5.00."                                        | **Contradicted by Voting Records:** Mamdani voted _against_ the fare hike proposal. (nysenate.gov)                 |
+| ⚠️ **UNVERIFIED**   | "Anonymous insiders say he is planning to flee the state."                                   | **No Evidence:** Subjective rumor with no corroboration.                                                           |
+
+### Citation Audit
+
+- `🟡 Low Credibility`: **albany-truth-watch.xyz** (Domain registered 3 weeks ago).
+- `🚨 Echo Chamber`: **patriot-beat-daily.com**
+  - _Warning:_ `patriot-beat-daily` cites `albany-truth-watch`, which cites this YouTube video. This is a closed loop of misinformation.
+
+### Transparency Check
+
+- **Status:** **Fail**.
+- **Flag:** `Vague Attribution`. The video repeatedly uses phrases like _"High-level officials told us"_ and _"Legal experts agree"_ without naming a single individual.

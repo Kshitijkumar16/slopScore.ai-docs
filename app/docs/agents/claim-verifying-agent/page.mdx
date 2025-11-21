@@ -1,6 +1,6 @@
 # Claim Verifying Agent
 
-The Claim Verifying Agent extracts facts & claims mentioned in the YouTube video and verifies their accuracy using real-time web search. This agent ensures the `credibility of the content` by systematically fact-checking claims made to viewers.
+The Claim Verifying Agent ensures the `credibility of the content` by systematically extracting facts & claims mentioned in the YouTube video and verifying their accuracy using real-time web search & Fact Check API Tools. 
 
 ---
 
@@ -502,12 +502,43 @@ const allVerificationResults = await Promise.all(allVerificationPromises);
 
 Once all claims have been processed (marked as `PROCESSED`), generate a comprehensive JSON report for the Supervisor Agent.
 
-**Step 1:** Aggregate Verification Results
+**Step 1:** Aggregate Results 
 Collect all individual claim verdicts and compute summary statistics:
 
 ---
 
 ## Agent's Final Output
+
+This is the `JSON object` **returned to the Supervisor Agent**.
+
+```ts filename="/final-output-claim-verifying-agent" copy
+interface ClaimAgentOutput {
+  agentName: "ClaimVerifyingAgent";
+  meta: {
+    totalClaims: number;
+    processingTimeMs: number;
+  };
+  summary: {
+    trueCount: number;
+    falseCount: number;
+    unverifiedCount: number;
+    hallucinatedCount: number; // High penalty
+  };
+  claims: Array<{
+    id: number;
+    text: string;
+    verdict: "TRUE" | "FALSE" | "UNVERIFIED" | "HALLUCINATED";
+    confidenceScore: number; // 0-1
+    reasoning: string; // e.g., "Contradicted by official WHO report."
+    evidence: Array<{
+      sourceName: string; // e.g., "Reuters"
+      url: string;
+      snippet: string;
+      isAuthoritative: boolean;
+    }>;
+  }>;
+}
+```
 
 ---
 
