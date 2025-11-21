@@ -1,38 +1,30 @@
 # Claim Verifying Agent
 
-The Claim Verifying Agent ensures the `credibility of the content` by systematically extracting facts & claims mentioned in the YouTube video and verifying their accuracy using real-time web search & Fact Check API Tools. 
-
----
-
-## Core Principle
+The Claim Verifying Agent ensures the `credibility of the content` by systematically extracting facts & claims mentioned in the YouTube video and verifying their accuracy using real-time web search & Fact Check API Tools.
 
 This agent analyses video transcripts to extract all [Relevant claims](/docs/agents/claim-verifying-agent#relevant-claim) made on the topic of the video, which are being presented to viewers (multiple claims throughout the video, relevant to the topic).
 
 The agent then fact-checks all these claims and generates a structured report about how many of these claims are `true`, `false`, or `unverifiable`.
 
-### Why this agent?
+---
 
-- The most important question before watching a video: `Is the information actually true?` This agent answers that question for you.
+## Why this agent?
 
-- Professional production quality no longer signals accuracy. A 15-minute educational video might teach you _"facts"_ that are completely invented by AI, and you'd have no way to know without spending hours fact-checking every claim yourself.
+- This agent answers the most critical question: `Is this information actually true?` High production quality no longer guarantees accuracy; polished videos may contain AI-invented "facts" that take hours to disprove manually.
 
-- So, instead of gambling on a video's accuracy or spend hours manually fact-checking, this agent automates the process professional fact-checkers use—but delivers results in 30 seconds instead of hours.
+- Instead of gambling on accuracy, this tool automates professional fact-checking, delivering results in sub 30 seconds. By verifying content before you watch, it prevents `misinformation from taking root` in the first place, therefore combating fast-spreading "fake news".
 
-- By providing this verification before you watch, this agent `prevents misinformation from taking root` in the first place.
+---
 
-- In an information landscape where `"fake news"` can spread faster than fact-checkers can respond, this agent gives you the same verification power professionals use—instantly, transparently, and at scale
+## Purpose
 
-### Purpose
+The purpose of this agent is to automate fact-checking and providing results about the `credibility` of the content. Specifically, this agent -
 
-The purpose of this agent is to automate the labor-intensive process of `lateral reading` and `fact verification` that professional fact-checkers perform manually—transforming hours of research into a 30-second analysis.
+1. `Prevents misinformation consumption`: Acts as a pre-watch filter against AI hallucinations by flagging false claims before you view.
 
-Specifically, this agent:
+2. `Provides transparent evidence`: Beyond simple labels, it details exactly which claims are verified or contradicted, empowering decisions based on proof.
 
-1. `Prevents misinformation consumption`: By flagging false or unverifiable claims before the user invests time watching the video, it acts as a filter against AI hallucinations and fabricated content.​
-
-2. `Provides transparent evidence`: Rather than simply labeling content as "fake" or "real," the agent shows which specific claims were verified, contradicted, or lack corroboration—empowering users to make informed decisions based on evidence, not algorithms.
-
-3. `Enables crisis-time verification`: During breaking news events (calamities, political events, emergencies), the agent provides verification in 30 seconds—faster than fact-checkers can publish rebuttals—helping users distinguish verified emergency information from panic-generating content.
+3. `Enables crisis-time verification`: During emergencies, it verifies facts in 30 seconds—outpacing human checkers to separate truth from panic.
 
 ---
 
@@ -502,7 +494,7 @@ const allVerificationResults = await Promise.all(allVerificationPromises);
 
 Once all claims have been processed (marked as `PROCESSED`), generate a comprehensive JSON report for the Supervisor Agent.
 
-**Step 1:** Aggregate Results 
+**Step 1:** Aggregate Results
 Collect all individual claim verdicts and compute summary statistics:
 
 ---
