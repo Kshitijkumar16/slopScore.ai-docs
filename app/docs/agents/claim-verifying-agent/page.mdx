@@ -65,7 +65,7 @@ Dynamic prompting is a technique where prompts are constructed programmatically 
 
 - #### How it works here:
 
-  1.  `Context Analysis:` First, we analyze the video's metadata (title, description, channel info) to determine its domain, tone, and audience
+  1.  `Context Analysis:` First, we analyze the video's metadata (title, description, channel info, transcript) to determine its domain, tone, and audience
 
   2.  `Template Selection:` Based on the context, we select appropriate prompt templates optimized for that content type
 
@@ -79,7 +79,7 @@ This provides us benefits like higher accuracy, better context awareness and red
 
 ## Agent Workflow
 
-The claim verifying agent works with LLM as well as additional tools to first extract the [Relevant Claims](/docs/agents/claim-verifying-agent#relevant-claim) from the provided transcript, verfify these claims, generate a report and pass that on to the supervisor agent.
+The claim verifying agent works with an LLM as well as additional tools to first extract the [Relevant Claims](/docs/agents/claim-verifying-agent#relevant-claim) from the provided transcript, verify these claims, generate a report and pass that on to the supervisor agent.
 
 ### Overview of steps
 
@@ -87,15 +87,15 @@ The claim verifying agent works with LLM as well as additional tools to first ex
 
 2. `Claim Verification:` For each extracted claim, the agent executes one of two strategies in parallel:
 
-- Strategy A (Direct Web Search): If verificationStrategy is `WEB_SEARCH` or `SKIP`, go directly to Brave Search
+- Strategy A (Direct Web Search): If `verificationStrategy` is `WEB_SEARCH`, go directly to Brave Search
 
-- Strategy B (Fact Check with Fallback): If verificationStrategy is `FACT_CHECK_API` or `BOTH`:
+- Strategy B (Fact Check with Fallback): If `verificationStrategy` is `FACT_CHECK_API`:
 
   1. Query Google Fact Check API first
   2. If result found AND confidence ≥ 85%, mark claim as processed
   3. Otherwise, fallback to Brave Search
 
-- All claims are processed in parallel using Promise.all()
+- All claims are processed in parallel using `Promise.all()`
 
 3. `Report Generation`: Once all claims are processed, generate a [structured JSON report](/docs/agents/claim-verifying-agent#) with all verification results and pass to the [Supervisor Agent](/docs/agents/supervisor-agent) for final synthesis.
 
@@ -103,7 +103,7 @@ The claim verifying agent works with LLM as well as additional tools to first ex
 
 **Step 1** : Gather video details & generate context for the video
 
-Once the agent gets triggered, it uses the input JSON to determine the following things using an LLM -
+Once the agent gets triggered, it uses the `input JSON` to determine the following things using an LLM -
 
 - The `topic` of the video,
 - The `tone` of the message,
@@ -304,160 +304,113 @@ const allResults = await Promise.all(allVerificationPromises);
 **Step 3:** Path A - Direct Brave Search
 For claims with `WEB_SEARCH` strategy:
 
-Task 3.1: Execute Brave Search queries
+Task 3.1: Execute Brave Search queries and filter the results
 
 - Extract `braveSearchQueries` array from claim
 - Execute all queries in parallel using `Promise.all()`
 - Apply domain filters if specified in query object (for `Health/medical claims`, `Government statistics`, `Scientific facts`)
 
 ```ts filename="" copy
-async function verifyWithBraveSearchOnly(claim: ClaimObject) {
-  // Execute all Brave Search queries in parallel
-  const searchResults = await Promise.all(
-    claim.braveSearchQueries.map((sq) => executeBraveSearch(sq))
-  );
-
-  // Continue to Task 3.3
-}
-```
-
-Task 3.3: Parse and filter search results
-
-- Extract snippets, URLs, and publish dates from Brave Search response
-- Filter to authoritative domains (prioritize `.gov`, `.edu`, major news outlets)
-
-Task 3.4: Perform consensus analysis
-
-- Count sources supporting vs contradicting the claim
-- Weight by authority score (NASA > Wikipedia > blogs)
-- Check numerical alignment if claim contains numbers (must match within ±10%)
-- Calculate overall confidence score
-
-Task 3.5: Assign verdict
-
-- `TRUE`: ≥80% weighted sources support, no high-authority contradictions
-- `FALSE`: ≥80% weighted sources contradict, or high-authority source explicitly disproves
-- `COULDN'T_TELL`: Conflicting sources, insufficient data, or authority score below 0.6
-
-```ts filename="" copy
-// Continued from Task 3.2
-const aggregatedSources = deduplicateAndMerge(searchResults);
-const consensus = analyzeConsensus(aggregatedSources, claim);
-
-return {
-claimId: claim.id,
-verdict: consensus.verdict, // TRUE | FALSE | COULDN'T_TELL
-confidence: consensus.confidence,
-reasoning: consensus.reasoning,
-sources: consensus.sources
-};
-}
-```
-
-**Step 4:** Path B - Fact Check with Fallback
-For claims with `FACT_CHECK_API` strategy:
-
-Task 4.1: Query Google Fact Check API
-
-Use `factCheckQuery` string from claim object
-
-Call `https://factchecktools.googleapis.com/v1alpha1/claims:search`
-
-Set timeout to 5 seconds (fast fail if API slow)
-
-```ts filename="" copy
-async function verifyWithFactCheckAndFallback(claim: ClaimObject) {
-  // Task 4.1: Try Google Fact Check first
-  const factCheckResult = await queryGoogleFactCheck(claim.factCheckQuery);
-
-  // Continue to Task 4.2
-}
-```
-
-Task 4.2: Parse ClaimReview results
-
-- Extract all `claimReview` objects from response
-- Parse `textualRating` (True, False, Mostly True, etc.)
-- Extract `publisher`, `url`, `reviewDate` for each review
-- Aggregate multiple reviews if claim has been fact-checked by multiple sources
-
-Task 4.3: Calculate Fact Check confidence
-
-- Count reviews by verdict category (true vs false vs mixed)
-- Weight by publisher authority (Reuters > smaller outlets)
-- Calculate consensus confidence: `agreementCount` / `totalReviews`
-
-```ts filename="" copy
-// Continued from Task 4.1
-if (!factCheckResult || factCheckResult.claims.length === 0) {
-  // No ClaimReview found, skip to Task 4.5 (fallback)
-} else {
-  // Task 4.2 & 4.3: Parse and calculate confidence
-  const parsedReviews = parseClaimReviews(
-    factCheckResult.claims[0].claimReview
-  );
-  const consensus = calculateFactCheckConsensus(parsedReviews);
-
-  // Continue to Task 4.4
-}
-```
-
-Task 4.4: Check confidence threshold
-
-- If `consensus.confidence >= 0.85` (85% threshold):
-
-  - Mark claim as PROCESSED
-  - Return verdict with ClaimReview sources
-  - Skip Brave Search fallback
-
-- If `consensus.confidence < 0.85`:
-
-  - Proceed to Task 4.5 (Brave Search fallback)
-
-```ts filename="" copy
-// Continued from Task 4.3
-if (consensus.confidence >= 0.85) {
-  // High confidence match found - claim is PROCESSED
-  return {
-    claimId: claim.id,
-    verdict: consensus.verdict,
-    confidence: consensus.confidence,
-    verificationMethod: "FACT_CHECK_API",
-    reasoning: consensus.reasoning,
-    sources: parsedReviews.map((r) => ({
-      publisher: r.publisher.name,
-      url: r.url,
-      verdict: r.textualRating,
-      reviewDate: r.reviewDate,
-    })),
-  };
-  // If confidence < 85%, fall through to Task 4.5
-}
-```
-
-Task 4.5: Fallback to Brave Search
-
-- If no ClaimReview found OR confidence below 85%
-- Execute same Brave Search logic as Path A (Tasks 3.2 - 3.5)
-- Return verdict with `verificationMethod: "WEB_SEARCH_FALLBACK"`
-
-```ts filename="" copy
-// Task 4.5: Brave Search fallback
-const searchResults = await Promise.all(
-  claim.braveSearchQueries.map((sq) => executeBraveSearch(sq))
+// 1. Gather raw search results
+const rawResults = await Promise.all(
+  claim.braveSearchQueries.map((q) => executeBraveSearch(q))
 );
 
-const aggregatedSources = deduplicateAndMerge(searchResults);
-const consensus = analyzeConsensus(aggregatedSources, claim);
+// 2. Deduplicate and filter for high-quality domains (.gov, .edu, major news)
+const evidenceSnippets = filterAndRankSnippets(rawResults);
+```
 
-return {
-  claimId: claim.id,
-  verdict: consensus.verdict,
-  confidence: consensus.confidence,
-  verificationMethod: "WEB_SEARCH_FALLBACK",
-  reasoning: consensus.reasoning,
-  sources: consensus.sources,
-};
+Task 3.2: LLM Consensus Analysis (The New Brain - Agentic RAG Approach)
+
+We cannot rely on simple keyword matching. We pass the Original Claim and the Evidence Snippets to a lightweight LLM (e.g., GPT-4o-mini) to determine the truth.
+
+```ts filename="/pass-to-lightweight-llm.ts" copy
+{
+  "claim": "Eating dirt cures immunity",
+  "evidence": [
+    { "source": "Mayo Clinic", "snippet": "There is no scientific evidence supporting soil ingestion..." },
+    { "source": "CDC", "snippet": "Ingesting soil can lead to parasitic infections..." }
+  ]
+}
+```
+
+**Prompt Logic:**
+
+"You are a strict fact-checker. Compare the CLAIM against the provided EVIDENCE SNIPPETS.
+Determine if the evidence SUPPORTS, CONTRADICTS, or is INCONCLUSIVE regarding the claim.
+Return a verdict, a confidence score (0-1), and a one-sentence reasoning."
+
+Task 3.3: Parse verdict
+
+```ts filename="parse-verdict.ts" copy
+async function verifyWithBraveSearchOnly(claim: ClaimObject) {
+  // 1. Search
+  const snippets = await gatherEvidence(claim.braveSearchQueries);
+
+  // 2. Analyze with LLM
+  const analysis = await llm.generate({
+    messages: [
+      {
+        role: "system",
+        content: "Analyze this claim against these search snippets...",
+      },
+      {
+        role: "user",
+        content: JSON.stringify({ claim: claim.statement, snippets }),
+      },
+    ],
+  });
+
+  // 3. Return structured verdict
+  return {
+    claimId: claim.id,
+    verdict: analysis.verdict, // "TRUE" | "FALSE" | "UNVERIFIED"
+    confidence: analysis.confidence,
+    reasoning: analysis.reasoning,
+    evidence: snippets.slice(0, 3), // Keep top 3 sources for the UI
+  };
+}
+```
+
+**Step 3:** Path B - Fact Check with Fallback
+
+For claims with `FACT_CHECK_API` strategy. Google Fact Check returns structured data (`textualRating`). We can map it algorithmically to save tokens, but we will still need to use an LLM to generate reasoning.
+
+Task 3.1: Query & Map
+
+Google returns ratings like "False" or "Mostly Fake." We map these to our standard format.
+
+| Google Rating                       | SlopScore Verdict                  |
+| :---------------------------------- | :--------------------------------- |
+| "True", "Correct"                   | `TRUE`                             |
+| "False", "Incorrect", "Mostly Fake" | `FALSE`                            |
+| "Mostly False", "Misleading"        | `FALSE`                            |
+| "Half True", "Missing Context"      | `UNVERIFIED` (or Trigger Fallback) |
+
+```ts filename="/fact-checl-logic.ts" copy
+async function verifyWithFactCheckAndFallback(claim: ClaimObject) {
+  const result = await queryGoogleFactCheck(claim.factCheckQuery);
+
+  if (result && result.claims && result.claims.length > 0) {
+    const review = result.claims[0].claimReview[0];
+
+    // Algorithmic Mapping (Fast)
+    const verdict = mapRatingToVerdict(review.textualRating);
+
+    if (verdict !== "UNVERIFIED") {
+      return {
+        claimId: claim.id,
+        verdict: verdict,
+        confidence: 1.0, // Fact checks are high confidence
+        reasoning: `Fact-checked by ${review.publisher.name}: ${review.title}`,
+        evidence: [{ source: review.publisher.name, url: review.url }],
+      };
+    }
+  }
+
+  // Fallback: If Google result is empty or ambiguous ("Half True")
+  return await verifyWithBraveSearchOnly(claim);
+}
 ```
 
 **Step 5:** Wait for All Claims to Complete
@@ -494,8 +447,20 @@ const allVerificationResults = await Promise.all(allVerificationPromises);
 
 Once all claims have been processed (marked as `PROCESSED`), generate a comprehensive JSON report for the Supervisor Agent.
 
-**Step 1:** Aggregate Results
-Collect all individual claim verdicts and compute summary statistics:
+**Step 1:** Assign verification status
+
+For every claim, we assign a final status based on the evidence found.
+
+| Verdict         | Condition                                                                                                              |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `TRUE`          | Supported by ≥2 authoritative sources. No contradictions.                                                              |
+| `FALSE`         | Contradicted by ≥1 high-authority source (e.g., Reuters, NASA).                                                        |
+| `UNVERIFIED`    | No reliable evidence found, or conflicting data.                                                                       |
+| `HALLUCINATION` | The video attributes the claim to a source (e.g., "NASA says..."), but the source does not exist or says the opposite. |
+
+**Step 2:** Format data and pass to Supervisor agent
+
+This marks the end of the worflow for Claim Verifying agent.
 
 ---
 
